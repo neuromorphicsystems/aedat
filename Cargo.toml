@@ -1,0 +1,19 @@
+[package]
+name = "aedat"
+version = "0.1.0"
+
+[profile.release]
+lto = true
+
+[lib]
+name = "aedat"
+crate-type = ["cdylib"]
+
+[dependencies]
+flatbuffers = "0.6.0"
+lz4 = "1.23.1"
+ndarray = "0.13"
+numpy = "0.7.0"
+pyo3 = {version = "0.8.5", features = ["extension-module"]}
+roxmltree = "0.9.0"
+zstd = "0.5.1"

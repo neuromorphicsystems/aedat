@@ -1,0 +1,17 @@
+file_identifier "IOHE";
+
+enum Compression : int32 {
+	None,
+	Lz4,
+	Lz4High,
+	Zstd,
+	ZstdHigh,
+}
+
+table Ioheader {
+	compression: Compression = None;
+	file_data_position: int64 = -1;
+	description: string;
+}
+
+root_type Ioheader;
