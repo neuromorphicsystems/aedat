@@ -13,7 +13,7 @@ A Rust compiling toolchain is required during the installation (but can be remov
 
 ```sh
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-git clone https://http://github.com/neuromorphicsystems/aedat.git
+git clone https://github.com/neuromorphicsystems/aedat.git
 cd aedat
 rustup toolchain install nightly
 rustup override set nightly
@@ -27,7 +27,7 @@ After compiling, copy the generated library *target/release/libaedat.so* in the 
 ```sh
 brew install rustup
 rustup-init
-git clone https://http://github.com/neuromorphicsystems/aedat.git
+git clone https://github.com/neuromorphicsystems/aedat.git
 cd aedat
 rustup toolchain install nightly
 rustup override set nightly
