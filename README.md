@@ -44,6 +44,15 @@ The `aedat` library provides a single class: `Decoder`. A decoder object is crea
 
 The file *scripts/example.py* shows how to use the decoder object. *scripts/example_with_comments* contains the same code with detailed comments.
 
+Because the lifetime of the file handle is managed by Rust, decoder objects are not compatible with the [with](https://docs.python.org/3/reference/compound_stmts.html#with) statement. To ensure garbage collection, point the decoder variable to something else, for example `None`, when you are done using it:
+```py
+import aedat
+
+decoder = aedat.Decoder(`/path/to/file.aedat`)
+# do something with decoder
+decoder = None
+```
+
 # Contribute
 
 After changing any of the files in *framebuffers*, one must run:
