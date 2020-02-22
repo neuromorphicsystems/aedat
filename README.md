@@ -48,7 +48,7 @@ Because the lifetime of the file handle is managed by Rust, decoder objects are 
 ```py
 import aedat
 
-decoder = aedat.Decoder(`/path/to/file.aedat`)
+decoder = aedat.Decoder('/path/to/file.aedat')
 # do something with decoder
 decoder = None
 ```
