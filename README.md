@@ -48,8 +48,10 @@ You can now run the python scripts in the *scripts* directory. If you want to im
 rustup toolchain install nightly
 rustup override set nightly
 cargo build --release
-cp target/release/libaedat.dll scripts/aedat.pyd
+copy .\target\release\aedat.dll .\scripts\aedat.pyd
 ```
+
+You can now run the python scripts in the *scripts* directory. If you want to import the libary from another directory, copy *aedat.pyd* in said directory first.
 
 # Documentation
 
