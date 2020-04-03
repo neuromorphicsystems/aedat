@@ -6,7 +6,6 @@ AEDAT is a fast AEDAT 4 python reader, with a Rust underlying implementation.
 
 This library requires [Python 3.x](https://www.python.org), x >= 5, and [NumPy](https://numpy.org). This guide assumes that they are installed on your machine.
 
-
 A Rust compiling toolchain is required during the installation (but can be removed afterwards).
 
 ## Linux
@@ -37,6 +36,19 @@ cp target/release/libaedat.dylib scripts/aedat.so
 ```
 
 You can now run the python scripts in the *scripts* directory. If you want to import the libary from another directory, copy *aedat.so* in said directory first.
+
+## Windows
+
+1. install rustup (instructions availables at https://www.rust-lang.org/tools/install)
+2. clone or download this repository
+3. run in PowerShell:
+  ```sh
+  cd aedat
+  rustup toolchain install nightly
+  rustup override set nightly
+  cargo build --release
+  cp target/release/libaedat.dll scripts/aedat.pyd
+  ```
 
 # Documentation
 
