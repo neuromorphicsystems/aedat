@@ -41,9 +41,8 @@ You can now run the python scripts in the *scripts* directory. If you want to im
 
 1. install rustup (instructions availables at https://www.rust-lang.org/tools/install)
 2. clone or download this repository
-3. run in PowerShell:
+3. run in PowerShell from the *aedat* directory:
   ```sh
-  cd aedat
   rustup toolchain install nightly
   rustup override set nightly
   cargo build --release
