@@ -6,6 +6,8 @@ AEDAT is a fast AEDAT 4 python reader, with a Rust underlying implementation.
 
 This library requires [Python 3.x](https://www.python.org), x >= 5, and [NumPy](https://numpy.org). This guide assumes that they are installed on your machine.
 
+Note for Windows users: this library requires the x86-64 version of Python. You can download it here: https://www.python.org/downloads/windows/ (the default installer contains the x86 version).
+
 A Rust compiling toolchain is required during the installation (but can be removed afterwards).
 
 ## Linux
