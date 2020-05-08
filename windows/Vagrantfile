@@ -1,0 +1,41 @@
+$install = <<-'SCRIPT'
+function Install-Python($version, $suffix) {
+    Write-Output "installing python $version$suffix"
+    Invoke-WebRequest `
+        -URI "https://www.python.org/ftp/python/$version/python-$version$suffix.exe" `
+        -OutFile "C:\Users\vagrant\python-$version$suffix.exe" `
+        -UseBasicParsing
+    & "C:\Users\vagrant\python-$version$suffix.exe" /quiet `
+        InstallAllUsers=1 `
+        PrependPath=1 `
+        Include_test=0
+}
+Install-Python 3.8.2 ''
+Install-Python 3.7.7 ''
+Install-Python 3.6.8 ''
+Install-Python 3.5.4 ''
+Install-Python 3.8.2 '-amd64'
+Install-Python 3.7.7 '-amd64'
+Install-Python 3.6.8 '-amd64'
+Install-Python 3.5.4 '-amd64'
+choco install mingw -y
+Invoke-WebRequest `
+    -URI https://static.rust-lang.org/rustup/dist/x86_64-pc-windows-gnu/rustup-init.exe `
+    -OutFile C:\Users\vagrant\rustup-init.exe `
+    -UseBasicParsing
+C:\Users\vagrant\rustup-init.exe -y
+C:\Users\vagrant\.cargo\bin\rustup.exe toolchain add nightly-2020-01-23
+C:\Users\vagrant\.cargo\bin\rustup.exe toolchain add nightly-2020-01-23-i686-pc-windows-gnu
+C:\Users\vagrant\.cargo\bin\rustup.exe default nightly-2020-01-23
+mkdir C:\Users\vagrant\target
+Set-ItemProperty HKCU:\Environment CARGO_TARGET_DIR "C:\Users\vagrant\target"
+Set-ItemProperty HKCU:\Environment Path `
+    "$([System.Environment]::GetEnvironmentVariable("Path", "Machine"));$([System.Environment]::GetEnvironmentVariable("Path", "User"))"
+C:\Program` Files\Python35\Scripts\pip.exe install maturin
+SCRIPT
+
+Vagrant.configure("2") do |config|
+  config.vm.box = "gusztavvargadr/windows-10"
+  config.vm.synced_folder "../", "C:\\io"
+  config.vm.provision "shell", inline: $install
+end
