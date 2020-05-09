@@ -224,38 +224,23 @@ pip install maturin
 pip install twine
 ```
 
-3. Build the Vagrant box for Windows builds
+3. Download the base Vagrant box for Windows builds
 
 ```sh
 vagrant box add gusztavvargadr/windows-10
-cd windows
-vagrant up
 ```
 
 ## Build and publish
 
-1. macOS build and publish
-  ```sh
-  maturin build --release --strip
-  ```
 
-2. Linux build
-  ```sh
-  docker run --rm -v $(pwd):/io manylinux maturin build --release --strip
-  ```
-
-3. Windows build
-  ```sh
-  cd windows
-  vagrant ssh
-  cd C:\io
-  maturin build --release --strip
-  maturin build --release --strip --target i686-pc-windows-gnu --rustc-extra-args="--toolchain nightly"
-  maturin build --release --strip --target i686-pc-windows-gnu
-  copy C:\Users\vagrant\target\wheels\*.whl .\target\wheels\
-  ```
-
-4. Linux and Windows publish
-  ```sh
-  twine upload --skip-existing target/wheels/*
-  ```
+```sh
+rm -rf target
+maturin publish
+docker run --rm -v $(pwd):/io manylinux maturin build --release --strip
+cd windows
+vagrant up
+vagrant destroy -f
+cd ..
+twine upload --skip-existing target/wheels/*
+```
+Note: The second `maturin` call (i686 target) during the Windows build compiles the dependencies properly, but fails for the library itself (`error: Unrecognized option: 'toolchain'`). The third `maturin` call completes the compilation.

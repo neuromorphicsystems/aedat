@@ -2,7 +2,7 @@
 # It is not intended for manual editing.
 [[package]]
 name = "aedat"
-version = "0.2.0"
+version = "1.0.0"
 dependencies = [
  "flatbuffers 0.6.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "lz4 1.23.1 (registry+https://github.com/rust-lang/crates.io-index)",

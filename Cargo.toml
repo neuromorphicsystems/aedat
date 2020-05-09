@@ -1,6 +1,6 @@
 [package]
 name = "aedat"
-version = "0.2.0"
+version = "1.0.0"
 authors = ["International Centre for Neuromorphic Systems", "Alexandre Marcireau"]
 description = "A fast AEDAT4 decoder with an underlying Rust implementation"
 homepage = "https://github.com/neuromorphicsystems/aedat/"

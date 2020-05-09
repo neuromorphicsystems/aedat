@@ -26,7 +26,7 @@ Invoke-WebRequest `
 C:\Users\vagrant\rustup-init.exe -y
 C:\Users\vagrant\.cargo\bin\rustup.exe toolchain add nightly-2020-01-23
 C:\Users\vagrant\.cargo\bin\rustup.exe toolchain add nightly-2020-01-23-i686-pc-windows-gnu
-C:\Users\vagrant\.cargo\bin\rustup.exe default nightly-2020-01-23
+C:\Users\vagrant\.cargo\bin\rustup.exe target add --toolchain nightly-2020-01-23 i686-pc-windows-gnu
 mkdir C:\Users\vagrant\target
 Set-ItemProperty HKCU:\Environment CARGO_TARGET_DIR "C:\Users\vagrant\target"
 Set-ItemProperty HKCU:\Environment Path `
@@ -34,8 +34,19 @@ Set-ItemProperty HKCU:\Environment Path `
 C:\Program` Files\Python35\Scripts\pip.exe install maturin
 SCRIPT
 
+$build = <<-'SCRIPT'
+cd C:\io
+C:\Users\vagrant\.cargo\bin\rustup.exe default nightly-2020-01-23
+C:\Program` Files\Python35\Scripts\maturin.exe build --release --strip
+C:\Users\vagrant\.cargo\bin\rustup.exe default nightly-2020-01-23-i686-pc-windows-gnu
+C:\Program` Files\Python35\Scripts\maturin.exe -ErrorAction SilentlyContinue build --release --strip --target i686-pc-windows-gnu --rustc-extra-args="--toolchain nightly-2020-01-23"
+C:\Program` Files\Python35\Scripts\maturin.exe build --release --strip --target i686-pc-windows-gnu
+copy C:\Users\vagrant\target\wheels\*.whl .\target\wheels\
+SCRIPT
+
 Vagrant.configure("2") do |config|
   config.vm.box = "gusztavvargadr/windows-10"
   config.vm.synced_folder "../", "C:\\io"
   config.vm.provision "shell", inline: $install
+  config.vm.provision "shell", inline: $build, run: "always"
 end
