@@ -64,7 +64,7 @@ impl Decoder {
                     python_stream.set_item("height", stream.height)?;
                 }
                 aedat::StreamContent::Imus => python_stream.set_item("type", "imus")?,
-                aedat::StreamContent::Triggers => python_stream.set_item("content", "triggers")?,
+                aedat::StreamContent::Triggers => python_stream.set_item("type", "triggers")?,
             }
             python_id_to_stream.set_item(id, python_stream)?;
         }
