@@ -235,6 +235,7 @@ vagrant box add gusztavvargadr/windows-10
 
 ```sh
 rm -rf target
+eval "$(pyenv init -)"
 maturin publish
 docker run --rm -v $(pwd):/io manylinux maturin build --release --strip
 cd windows

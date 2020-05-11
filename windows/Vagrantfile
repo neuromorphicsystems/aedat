@@ -39,7 +39,7 @@ cd C:\io
 C:\Users\vagrant\.cargo\bin\rustup.exe default nightly-2020-01-23
 C:\Program` Files\Python35\Scripts\maturin.exe build --release --strip
 C:\Users\vagrant\.cargo\bin\rustup.exe default nightly-2020-01-23-i686-pc-windows-gnu
-C:\Program` Files\Python35\Scripts\maturin.exe -ErrorAction SilentlyContinue build --release --strip --target i686-pc-windows-gnu --rustc-extra-args="--toolchain nightly-2020-01-23"
+C:\Program` Files\Python35\Scripts\maturin.exe build --release --strip --target i686-pc-windows-gnu --rustc-extra-args="--toolchain nightly-2020-01-23"
 C:\Program` Files\Python35\Scripts\maturin.exe build --release --strip --target i686-pc-windows-gnu
 copy C:\Users\vagrant\target\wheels\*.whl .\target\wheels\
 SCRIPT
