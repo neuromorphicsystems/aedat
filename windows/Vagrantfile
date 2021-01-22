@@ -10,37 +10,36 @@ function Install-Python($version, $suffix) {
         PrependPath=1 `
         Include_test=0
 }
-Install-Python 3.8.2 ''
-Install-Python 3.7.7 ''
+Install-Python 3.9.1 ''
+Install-Python 3.8.7 ''
+Install-Python 3.7.9 ''
 Install-Python 3.6.8 ''
-Install-Python 3.5.4 ''
-Install-Python 3.8.2 '-amd64'
-Install-Python 3.7.7 '-amd64'
+Install-Python 3.9.1 '-amd64'
+Install-Python 3.8.7 '-amd64'
+Install-Python 3.7.9 '-amd64'
 Install-Python 3.6.8 '-amd64'
-Install-Python 3.5.4 '-amd64'
-choco install mingw -y
+choco install mingw -y --version=8.1.0
 Invoke-WebRequest `
     -URI https://static.rust-lang.org/rustup/dist/x86_64-pc-windows-gnu/rustup-init.exe `
     -OutFile C:\Users\vagrant\rustup-init.exe `
     -UseBasicParsing
-C:\Users\vagrant\rustup-init.exe -y
-C:\Users\vagrant\.cargo\bin\rustup.exe toolchain add nightly-2020-01-23
-C:\Users\vagrant\.cargo\bin\rustup.exe toolchain add nightly-2020-01-23-i686-pc-windows-gnu
-C:\Users\vagrant\.cargo\bin\rustup.exe target add --toolchain nightly-2020-01-23 i686-pc-windows-gnu
+C:\Users\vagrant\rustup-init.exe -y --default-host x86_64-pc-windows-gnu
+C:\Users\vagrant\.cargo\bin\rustup.exe target add --toolchain stable-x86_64-pc-windows-gnu x86_64-pc-windows-gnu
+C:\Users\vagrant\.cargo\bin\rustup.exe toolchain add stable-i686-pc-windows-gnu
+C:\Users\vagrant\.cargo\bin\rustup.exe target add --toolchain stable-i686-pc-windows-gnu i686-pc-windows-gnu
 mkdir C:\Users\vagrant\target
 Set-ItemProperty HKCU:\Environment CARGO_TARGET_DIR "C:\Users\vagrant\target"
 Set-ItemProperty HKCU:\Environment Path `
     "$([System.Environment]::GetEnvironmentVariable("Path", "Machine"));$([System.Environment]::GetEnvironmentVariable("Path", "User"))"
-C:\Program` Files\Python35\Scripts\pip.exe install maturin
+C:\Program` Files\Python36\Scripts\pip.exe install maturin
 SCRIPT
 
 $build = <<-'SCRIPT'
 cd C:\io
-C:\Users\vagrant\.cargo\bin\rustup.exe default nightly-2020-01-23
-C:\Program` Files\Python35\Scripts\maturin.exe build --release --strip
-C:\Users\vagrant\.cargo\bin\rustup.exe default nightly-2020-01-23-i686-pc-windows-gnu
-C:\Program` Files\Python35\Scripts\maturin.exe build --release --strip --target i686-pc-windows-gnu --rustc-extra-args="--toolchain nightly-2020-01-23"
-C:\Program` Files\Python35\Scripts\maturin.exe build --release --strip --target i686-pc-windows-gnu
+C:\Users\vagrant\.cargo\bin\rustup.exe default stable-x86_64-pc-windows-gnu
+C:\Program` Files\Python36\Scripts\maturin.exe build --release --strip --target x86_64-pc-windows-gnu
+C:\Users\vagrant\.cargo\bin\rustup.exe default stable-i686-pc-windows-gnu
+C:\Program` Files\Python36\Scripts\maturin.exe build --release --strip --target i686-pc-windows-gnu
 copy C:\Users\vagrant\target\wheels\*.whl .\target\wheels\
 SCRIPT
 

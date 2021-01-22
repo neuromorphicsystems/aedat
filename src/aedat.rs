@@ -149,7 +149,10 @@ impl Decoder {
         {
             let mut buffer = std::vec![0; length as usize];
             decoder.file.read_exact(&mut buffer)?;
-            let ioheader = ioheader_generated::get_root_as_ioheader(&buffer);
+            let ioheader = match ioheader_generated::root_as_ioheader(&buffer) {
+                Ok(result) => result,
+                Err(_) => return Err(ParseError::new("the packet does not have a size prefix")),
+            };
             decoder.compression = ioheader.compression();
             decoder.file_data_position = ioheader.file_data_position();
             let description = match ioheader.description() {
@@ -312,6 +315,7 @@ impl Iterator for Decoder {
                     Err(error) => return Some(Err(ParseError::from(error))),
                 }
             }
+            _ => return Some(Err(ParseError::new("unknown compression algorithm")))
         }
         let expected_content = &(match self.id_to_stream.get(&packet.stream_id) {
             Some(content) => content,

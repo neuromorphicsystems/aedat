@@ -154,8 +154,6 @@ A Rust compiling toolchain is required during the installation (but can be remov
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 git clone https://github.com/neuromorphicsystems/aedat.git
 cd aedat
-rustup toolchain install nightly
-rustup override set nightly
 cargo build --release
 cp target/release/libaedat.so aedat.so
 ```
@@ -169,8 +167,6 @@ brew install rustup
 rustup-init
 git clone https://github.com/neuromorphicsystems/aedat.git
 cd aedat
-rustup toolchain install nightly
-rustup override set nightly
 cargo build --release
 cp target/release/libaedat.dylib aedat.so
 ```
@@ -183,8 +179,6 @@ You can `import aedat` from python scripts in the same directory as *aedat.so*, 
 2. clone or download this repository
 3. run in PowerShell from the *aedat* directory:
 ```sh
-rustup toolchain install nightly
-rustup override set nightly
 cargo build --release
 copy .\target\release\aedat.dll .\aedat.pyd
 ```
@@ -212,14 +206,14 @@ rustup component add rustfmt
 ## Requirements
 
 1. Build the Docker image for Linux builds
-```
+```sh
 docker build manylinux -t manylinux
 ```
 
 2. Install all the Pythons for macOS
-```
+```sh
 brew install pyenv
-pyenv global 3.5.9 3.6.10 3.7.7 3.8.2
+pyenv global 3.6.12 3.7.9 3.8.7 3.9.1
 pip install maturin
 pip install twine
 ```
@@ -244,4 +238,3 @@ vagrant destroy -f
 cd ..
 twine upload --skip-existing target/wheels/*
 ```
-Note: The second `maturin` call (i686 target) during the Windows build compiles the dependencies properly, but fails for the library itself (`error: Unrecognized option: 'toolchain'`). The third `maturin` call completes the compilation.
