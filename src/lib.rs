@@ -274,12 +274,12 @@ impl pyo3::PyIterProtocol for Decoder {
                         *(imu_cell.offset(12) as *mut f32) = imu.accelerometer_x();
                         *(imu_cell.offset(16) as *mut f32) = imu.accelerometer_y();
                         *(imu_cell.offset(20) as *mut f32) = imu.accelerometer_z();
-                        *(imu_cell.offset(12) as *mut f32) = imu.gyroscope_x();
-                        *(imu_cell.offset(16) as *mut f32) = imu.gyroscope_y();
-                        *(imu_cell.offset(20) as *mut f32) = imu.gyroscope_z();
-                        *(imu_cell.offset(12) as *mut f32) = imu.magnetometer_x();
-                        *(imu_cell.offset(16) as *mut f32) = imu.magnetometer_y();
-                        *(imu_cell.offset(20) as *mut f32) = imu.magnetometer_z();
+                        *(imu_cell.offset(24) as *mut f32) = imu.gyroscope_x();
+                        *(imu_cell.offset(28) as *mut f32) = imu.gyroscope_y();
+                        *(imu_cell.offset(32) as *mut f32) = imu.gyroscope_z();
+                        *(imu_cell.offset(36) as *mut f32) = imu.magnetometer_x();
+                        *(imu_cell.offset(40) as *mut f32) = imu.magnetometer_y();
+                        *(imu_cell.offset(44) as *mut f32) = imu.magnetometer_z();
                         index += 1 as numpy::npyffi::npy_intp;
                     }
                     PyObject::from_owned_ptr(python, array as *mut pyo3::ffi::PyObject)

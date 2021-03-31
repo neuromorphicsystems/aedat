@@ -49,6 +49,14 @@ impl std::convert::From<std::io::Error> for ParseError {
     }
 }
 
+impl std::convert::From<flatbuffers::InvalidFlatbuffer> for ParseError {
+    fn from(error: flatbuffers::InvalidFlatbuffer) -> Self {
+        ParseError {
+            message: error.to_string(),
+        }
+    }
+}
+
 impl std::convert::From<std::str::Utf8Error> for ParseError {
     fn from(error: std::str::Utf8Error) -> Self {
         ParseError {
@@ -149,9 +157,8 @@ impl Decoder {
         {
             let mut buffer = std::vec![0; length as usize];
             decoder.file.read_exact(&mut buffer)?;
-            let ioheader = match ioheader_generated::root_as_ioheader(&buffer) {
-                Ok(result) => result,
-                Err(_) => return Err(ParseError::new("the packet does not have a size prefix")),
+            let ioheader = unsafe {
+                ioheader_generated::root_as_ioheader_unchecked(&buffer)
             };
             decoder.compression = ioheader.compression();
             decoder.file_data_position = ioheader.file_data_position();

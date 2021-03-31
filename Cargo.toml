@@ -1,6 +1,6 @@
 [package]
 name = "aedat"
-version = "1.1.0"
+version = "1.2.0"
 authors = ["International Centre for Neuromorphic Systems", "Alexandre Marcireau"]
 description = "A fast AEDAT4 decoder with an underlying Rust implementation"
 homepage = "https://github.com/neuromorphicsystems/aedat/"
@@ -17,7 +17,7 @@ name = "aedat"
 crate-type = ["cdylib"]
 
 [dependencies]
-flatbuffers = "0.8.2"
+flatbuffers = "0.8.3"
 lz4 = "1.23.2"
 ndarray = "0.14"
 numpy = "0.13.0"

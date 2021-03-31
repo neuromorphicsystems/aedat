@@ -213,7 +213,11 @@ docker build manylinux -t manylinux
 2. Install all the Pythons for macOS
 ```sh
 brew install pyenv
-pyenv global 3.6.12 3.7.9 3.8.7 3.9.1
+pyenv install 3.7.10
+pyenv install 3.8.8
+pyenv install 3.9.2
+LDFLAGS="-L/usr/local/opt/bzip2/lib -L/usr/local/opt/zlib/lib -L/usr/local/opt/openssl@1.1/lib" CFLAGS="-I/usr/local/opt/bzip2/include -I/usr/local/opt/zlib/include -I/usr/local/opt/openssl@1.1/include -I$(xcrun --show-sdk-path)/usr/include -Wno-implicit-function-declaration" pyenv install 3.6.13
+pyenv global 3.6.13 3.7.10 3.8.8 3.9.2
 pip install maturin
 pip install twine
 ```

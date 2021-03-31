@@ -10,8 +10,8 @@ function Install-Python($version, $suffix) {
         PrependPath=1 `
         Include_test=0
 }
-Install-Python 3.9.1 ''
-Install-Python 3.8.7 ''
+Install-Python 3.9.2 ''
+Install-Python 3.8.8 ''
 Install-Python 3.7.9 ''
 Install-Python 3.6.8 ''
 Install-Python 3.9.1 '-amd64'
