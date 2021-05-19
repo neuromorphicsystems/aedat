@@ -2,4 +2,4 @@ target/
 **/*.rs.bk
 aedat.so
 aedat.pyd
-.vagrant/
+wheels/

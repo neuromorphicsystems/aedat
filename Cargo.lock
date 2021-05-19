@@ -2,7 +2,7 @@
 # It is not intended for manual editing.
 [[package]]
 name = "aedat"
-version = "1.2.0"
+version = "1.2.1"
 dependencies = [
  "flatbuffers",
  "lz4",
@@ -57,16 +57,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "either"
-version = "1.6.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e78d4f1cc4ae33bbfc157ed5d5a5ef3bc29227303d595861deb238fcec4e9457"
-
-[[package]]
 name = "flatbuffers"
-version = "0.8.3"
+version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "63b5b0f949bdb25c077c83184ac689ae38ae392683d4c71e98be9736db66e94c"
+checksum = "56ce99b5111ec85b850c6f6c55399d3a50e266e4bfea36ad011b6b98160c647e"
 dependencies = [
  "bitflags",
  "smallvec",
@@ -85,17 +79,25 @@ dependencies = [
 ]
 
 [[package]]
-name = "glob"
-version = "0.3.0"
+name = "indoc"
+version = "0.3.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9b919933a397b79c37e33b77bb2aa3dc8eb6e165ad809e58ff75bc7db2e34574"
+checksum = "47741a8bc60fb26eb8d6e0238bbb26d8575ff623fdc97b1a2c00c050b9684ed8"
+dependencies = [
+ "indoc-impl",
+ "proc-macro-hack",
+]
 
 [[package]]
-name = "indoc"
-version = "1.0.3"
+name = "indoc-impl"
+version = "0.3.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e5a75aeaaef0ce18b58056d306c27b07436fbb34b8816c53094b76dd81803136"
+checksum = "ce046d161f000fffde5f432a0d034d0341dc152643b2598ed5bfce44c4f3a8f0"
 dependencies = [
+ "proc-macro-hack",
+ "proc-macro2",
+ "quote",
+ "syn",
  "unindent",
 ]
 
@@ -128,15 +130,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
-]
-
-[[package]]
-name = "itertools"
-version = "0.9.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "284f18f85651fe11e8a991b2adb42cb078325c996ed026d994719efcfca1d54b"
-dependencies = [
- "either",
 ]
 
 [[package]]
@@ -235,9 +228,9 @@ dependencies = [
 
 [[package]]
 name = "numpy"
-version = "0.13.0"
+version = "0.13.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7f65308af05bc6952d28e2d51c730dedf6e16d48699795cb7c33d6a9db59f850"
+checksum = "a7073fae1e0b82409533a29c6f804b79783d7b2d3c07728fdc4d884eda8cd4f0"
 dependencies = [
  "cfg-if 0.1.10",
  "libc",
@@ -274,9 +267,28 @@ dependencies = [
 
 [[package]]
 name = "paste"
-version = "1.0.4"
+version = "0.1.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c5d65c4d95931acda4498f675e332fcbdc9a06705cd07086c510e9b6009cd1c1"
+checksum = "45ca20c77d80be666aef2b45486da86238fabe33e38306bd3118fe4af33fa880"
+dependencies = [
+ "paste-impl",
+ "proc-macro-hack",
+]
+
+[[package]]
+name = "paste-impl"
+version = "0.1.18"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d95a7db200b97ef370c8e6de0088252f7e0dfff7d047a28528e47456c0fc98b6"
+dependencies = [
+ "proc-macro-hack",
+]
+
+[[package]]
+name = "proc-macro-hack"
+version = "0.5.19"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "dbf0c48bc1d91375ae5c3cd81e3722dff1abcf81a30960240640d223f59fe0e5"
 
 [[package]]
 name = "proc-macro2"
@@ -289,9 +301,9 @@ dependencies = [
 
 [[package]]
 name = "pyo3"
-version = "0.13.1"
+version = "0.13.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "00ca634cf3acd58a599b535ed6cb188223298977d471d146121792bfa23b754c"
+checksum = "4837b8e8e18a102c23f79d1e9a110b597ea3b684c95e874eb1ad88f8683109c3"
 dependencies = [
  "cfg-if 1.0.0",
  "ctor",
@@ -306,9 +318,9 @@ dependencies = [
 
 [[package]]
 name = "pyo3-macros"
-version = "0.13.1"
+version = "0.13.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "483ac516dbda6789a5b4be0271e7a31b9ad4ec8c0a5955050e8076f72bdbef8f"
+checksum = "a47f2c300ceec3e58064fd5f8f5b61230f2ffd64bde4970c81fdd0563a2db1bb"
 dependencies = [
  "pyo3-macros-backend",
  "quote",
@@ -317,9 +329,9 @@ dependencies = [
 
 [[package]]
 name = "pyo3-macros-backend"
-version = "0.13.1"
+version = "0.13.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "15230cabcda008f03565ed8bac40f094cbb5ee1b46e6551f1ec3a0e922cf7df9"
+checksum = "87b097e5d84fcbe3e167f400fbedd657820a375b034c78bd852050749a575d66"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -349,9 +361,9 @@ checksum = "41cc0f7e4d5d4544e8861606a285bb08d3e70712ccc7d2b84d7c0ccfaf4b05ce"
 
 [[package]]
 name = "roxmltree"
-version = "0.14.0"
+version = "0.14.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bf58a7d05b28e14b1e8902fa04c4d5d6109f5450ef71a5e6597f66e53f541504"
+checksum = "921904a62e410e37e215c40381b7117f830d9d89ba60ab5236170541dd25646b"
 dependencies = [
  "xmlparser",
 ]
@@ -441,18 +453,18 @@ checksum = "114ba2b24d2167ef6d67d7d04c8cc86522b87f490025f39f0303b7db5bf5e3d8"
 
 [[package]]
 name = "zstd"
-version = "0.6.0+zstd.1.4.8"
+version = "0.8.1+zstd.1.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d4e44664feba7f2f1a9f300c1f6157f2d1bfc3c15c6f3cf4beabf3f5abe9c237"
+checksum = "357d6bb1bd9c6f6a55a5a15c74d01260b272f724dc60cc829b86ebd2172ac5ef"
 dependencies = [
  "zstd-safe",
 ]
 
 [[package]]
 name = "zstd-safe"
-version = "3.0.0+zstd.1.4.8"
+version = "4.1.0+zstd.1.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d9447afcd795693ad59918c7bbffe42fdd6e467d708f3537e3dc14dc598c573f"
+checksum = "d30375f78e185ca4c91930f42ea2c0162f9aa29737032501f93b79266d985ae7"
 dependencies = [
  "libc",
  "zstd-sys",
@@ -460,12 +472,10 @@ dependencies = [
 
 [[package]]
 name = "zstd-sys"
-version = "1.4.19+zstd.1.4.8"
+version = "1.6.0+zstd.1.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ec24a9273d24437afb8e71b16f3d9a5d569193cccdb7896213b59f552f387674"
+checksum = "2141bed8922b427761470e6bbfeff255da94fa20b0bbeab0d9297fcaf71e3aa7"
 dependencies = [
  "cc",
- "glob",
- "itertools",
  "libc",
 ]

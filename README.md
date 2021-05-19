@@ -203,42 +203,23 @@ rustup component add rustfmt
 
 # Publish
 
-## Requirements
+1. Bump the version number in *Cargo.toml*.
 
-1. Build the Docker image for Linux builds
-```sh
-docker build manylinux -t manylinux
+2. Install Cubuzoa in a different directory (https://github.com/neuromorphicsystems/cubuzoa) to build pre-compiled versions for all major operating systems. Cubuzoa depends on VirtualBox (with its extension pack) and requires about 75 GB of free disk space.
+```
+cd cubuzoa
+python3 cubuzoa.py provision
+python3 cubuzoa.py build /path/to/aedat
 ```
 
-2. Install all the Pythons for macOS
-```sh
-brew install pyenv
-pyenv install 3.7.10
-pyenv install 3.8.8
-pyenv install 3.9.2
-LDFLAGS="-L/usr/local/opt/bzip2/lib -L/usr/local/opt/zlib/lib -L/usr/local/opt/openssl@1.1/lib" CFLAGS="-I/usr/local/opt/bzip2/include -I/usr/local/opt/zlib/include -I/usr/local/opt/openssl@1.1/include -I$(xcrun --show-sdk-path)/usr/include -Wno-implicit-function-declaration" pyenv install 3.6.13
-pyenv global 3.6.13 3.7.10 3.8.8 3.9.2
-pip install maturin
-pip install twine
+3. Install twine
+```
+pip3 install maturin
+pip3 install twine
 ```
 
-3. Download the base Vagrant box for Windows builds
-
-```sh
-vagrant box add gusztavvargadr/windows-10
+4. Upload the compiled wheels and the source code to PyPI:
 ```
-
-## Build and publish
-
-
-```sh
-rm -rf target
-eval "$(pyenv init -)"
-maturin publish
-docker run --rm -v $(pwd):/io manylinux maturin build --release --strip
-cd windows
-vagrant up
-vagrant destroy -f
-cd ..
-twine upload --skip-existing target/wheels/*
+maturin build --out wheels --interpreter
+python3 -m twine upload wheels/*
 ```
