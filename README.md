@@ -209,7 +209,7 @@ rustup component add rustfmt
 ```
 cd cubuzoa
 python3 cubuzoa.py provision
-python3 cubuzoa.py build /path/to/aedat
+python3 cubuzoa.py build /path/to/aedat --post /path/to/aedat/test.py
 ```
 
 3. Install twine
