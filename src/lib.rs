@@ -79,7 +79,7 @@ unsafe fn set_dtype_as_list_field(
     let tuple = pyo3::ffi::PyTuple_New(2);
     if pyo3::ffi::PyTuple_SetItem(
         tuple,
-        0 as pyo3::ffi::Py_ssize_t,
+        0_isize,
         pyo3::ffi::PyUnicode_FromStringAndSize(
             name.as_ptr() as *const std::os::raw::c_char,
             name.len() as pyo3::ffi::Py_ssize_t,
@@ -90,7 +90,7 @@ unsafe fn set_dtype_as_list_field(
     }
     if pyo3::ffi::PyTuple_SetItem(
         tuple,
-        1 as pyo3::ffi::Py_ssize_t,
+        1_isize,
         numpy::PY_ARRAY_API.PyArray_TypeObjectFromType(numpy_type as i32),
     ) < 0
     {
@@ -144,7 +144,7 @@ impl pyo3::PyIterProtocol for Decoder {
                     };
                 let mut length = events.len() as numpy::npyffi::npy_intp;
                 python_packet.set_item("events", unsafe {
-                    let dtype_as_list = pyo3::ffi::PyList_New(4 as pyo3::ffi::Py_ssize_t);
+                    let dtype_as_list = pyo3::ffi::PyList_New(4_isize);
                     set_dtype_as_list_field(dtype_as_list, 0, "t", u64::npy_type());
                     set_dtype_as_list_field(dtype_as_list, 1, "x", u16::npy_type());
                     set_dtype_as_list_field(dtype_as_list, 2, "y", u16::npy_type());
@@ -157,14 +157,14 @@ impl pyo3::PyIterProtocol for Decoder {
                         numpy::PY_ARRAY_API
                             .get_type_object(numpy::npyffi::array::NpyTypes::PyArray_Type),
                         dtype,
-                        1 as std::os::raw::c_int,
+                        1_i32,
                         &mut length as *mut numpy::npyffi::npy_intp,
                         std::ptr::null_mut(),
                         std::ptr::null_mut(),
-                        0 as std::os::raw::c_int,
+                        0_i32,
                         std::ptr::null_mut(),
                     );
-                    for mut index in { 0 as numpy::npyffi::npy_intp }..length {
+                    for mut index in 0_isize..length {
                         let event_cell = numpy::PY_ARRAY_API.PyArray_GetPtr(
                             array as *mut numpy::npyffi::PyArrayObject,
                             &mut index as *mut numpy::npyffi::npy_intp,
@@ -199,9 +199,11 @@ impl pyo3::PyIterProtocol for Decoder {
                         frame_generated::FrameFormat::Gray => "Gray",
                         frame_generated::FrameFormat::Bgr => "BGR",
                         frame_generated::FrameFormat::Bgra => "BGRA",
-                        _ => return Err(pyo3::PyErr::from(aedat::ParseError::new(
-                            "unknown frame format",
-                        )))
+                        _ => {
+                            return Err(pyo3::PyErr::from(aedat::ParseError::new(
+                                "unknown frame format",
+                            )))
+                        }
                     },
                 )?;
                 python_frame.set_item("width", frame.width())?;
@@ -236,7 +238,7 @@ impl pyo3::PyIterProtocol for Decoder {
                 };
                 let mut length = imus.len() as numpy::npyffi::npy_intp;
                 python_packet.set_item("imus", unsafe {
-                    let dtype_as_list = pyo3::ffi::PyList_New(11 as pyo3::ffi::Py_ssize_t);
+                    let dtype_as_list = pyo3::ffi::PyList_New(11_isize);
                     set_dtype_as_list_field(dtype_as_list, 0, "t", u64::npy_type());
                     set_dtype_as_list_field(dtype_as_list, 1, "temperature", f32::npy_type());
                     set_dtype_as_list_field(dtype_as_list, 2, "accelerometer_x", f32::npy_type());
@@ -256,14 +258,14 @@ impl pyo3::PyIterProtocol for Decoder {
                         numpy::PY_ARRAY_API
                             .get_type_object(numpy::npyffi::array::NpyTypes::PyArray_Type),
                         dtype,
-                        1 as std::os::raw::c_int,
+                        1_i32,
                         &mut length as *mut numpy::npyffi::npy_intp,
                         std::ptr::null_mut(),
                         std::ptr::null_mut(),
-                        0 as std::os::raw::c_int,
+                        0_i32,
                         std::ptr::null_mut(),
                     );
-                    let mut index = 0 as numpy::npyffi::npy_intp;
+                    let mut index = 0_isize;
                     for imu in imus {
                         let imu_cell = numpy::PY_ARRAY_API.PyArray_GetPtr(
                             array as *mut numpy::npyffi::PyArrayObject,
@@ -280,7 +282,7 @@ impl pyo3::PyIterProtocol for Decoder {
                         *(imu_cell.offset(36) as *mut f32) = imu.magnetometer_x();
                         *(imu_cell.offset(40) as *mut f32) = imu.magnetometer_y();
                         *(imu_cell.offset(44) as *mut f32) = imu.magnetometer_z();
-                        index += 1 as numpy::npyffi::npy_intp;
+                        index += 1_isize;
                     }
                     PyObject::from_owned_ptr(python, array as *mut pyo3::ffi::PyObject)
                 })?;
@@ -305,7 +307,7 @@ impl pyo3::PyIterProtocol for Decoder {
                 };
                 let mut length = triggers.len() as numpy::npyffi::npy_intp;
                 python_packet.set_item("triggers", unsafe {
-                    let dtype_as_list = pyo3::ffi::PyList_New(2 as pyo3::ffi::Py_ssize_t);
+                    let dtype_as_list = pyo3::ffi::PyList_New(2_isize);
                     set_dtype_as_list_field(dtype_as_list, 0, "t", u64::npy_type());
                     set_dtype_as_list_field(dtype_as_list, 1, "source", u8::npy_type());
                     let mut dtype: *mut numpy::npyffi::PyArray_Descr = std::ptr::null_mut();
@@ -316,14 +318,14 @@ impl pyo3::PyIterProtocol for Decoder {
                         numpy::PY_ARRAY_API
                             .get_type_object(numpy::npyffi::array::NpyTypes::PyArray_Type),
                         dtype,
-                        1 as std::os::raw::c_int,
+                        1_i32,
                         &mut length as *mut numpy::npyffi::npy_intp,
                         std::ptr::null_mut(),
                         std::ptr::null_mut(),
-                        0 as std::os::raw::c_int,
+                        0_i32,
                         std::ptr::null_mut(),
                     );
-                    let mut index = 0 as numpy::npyffi::npy_intp;
+                    let mut index = 0_isize;
                     for trigger in triggers {
                         let trigger_cell = numpy::PY_ARRAY_API.PyArray_GetPtr(
                             array as *mut numpy::npyffi::PyArrayObject,
@@ -341,11 +343,13 @@ impl pyo3::PyIterProtocol for Decoder {
                             triggers_generated::TriggerSource::FrameEnd => 7_u8,
                             triggers_generated::TriggerSource::ExposureBegin => 8_u8,
                             triggers_generated::TriggerSource::ExposureEnd => 9_u8,
-                            _ => return Err(pyo3::PyErr::from(aedat::ParseError::new(
-                                "unknown trigger source",
-                            )))
+                            _ => {
+                                return Err(pyo3::PyErr::from(aedat::ParseError::new(
+                                    "unknown trigger source",
+                                )))
+                            }
                         };
-                        index += 1 as numpy::npyffi::npy_intp;
+                        index += 1_isize;
                     }
                     PyObject::from_owned_ptr(python, array as *mut pyo3::ffi::PyObject)
                 })?;

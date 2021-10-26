@@ -20,7 +20,7 @@ mod imus_generated;
 #[path = "./triggers_generated.rs"]
 mod triggers_generated;
 
-const MAGIC_NUMBER: &'static str = "#!AER-DAT4.0\r\n";
+const MAGIC_NUMBER: &str = "#!AER-DAT4.0\r\n";
 
 #[derive(Debug)]
 pub struct ParseError {
@@ -157,9 +157,7 @@ impl Decoder {
         {
             let mut buffer = std::vec![0; length as usize];
             decoder.file.read_exact(&mut buffer)?;
-            let ioheader = unsafe {
-                ioheader_generated::root_as_ioheader_unchecked(&buffer)
-            };
+            let ioheader = unsafe { ioheader_generated::root_as_ioheader_unchecked(&buffer) };
             decoder.compression = ioheader.compression();
             decoder.file_data_position = ioheader.file_data_position();
             let description = match ioheader.description() {
@@ -242,16 +240,19 @@ impl Decoder {
                         }
                         .parse::<u16>()?;
                     }
-                    match decoder.id_to_stream.insert(
-                        stream_id,
-                        Stream {
-                            content: StreamContent::from(&identifier)?,
-                            width: width,
-                            height: height,
-                        },
-                    ) {
-                        Some(_) => return Err(ParseError::new("duplicated stream id")),
-                        None => (),
+                    if decoder
+                        .id_to_stream
+                        .insert(
+                            stream_id,
+                            Stream {
+                                content: StreamContent::from(&identifier)?,
+                                width,
+                                height,
+                            },
+                        )
+                        .is_some()
+                    {
+                        return Err(ParseError::new("duplicated stream id"));
                     }
                 }
             }
@@ -322,18 +323,15 @@ impl Iterator for Decoder {
                     Err(error) => return Some(Err(ParseError::from(error))),
                 }
             }
-            _ => return Some(Err(ParseError::new("unknown compression algorithm")))
+            _ => return Some(Err(ParseError::new("unknown compression algorithm"))),
         }
         let expected_content = &(match self.id_to_stream.get(&packet.stream_id) {
             Some(content) => content,
             None => return Some(Err(ParseError::new("unknown stream id"))),
         }
         .content);
-        if !flatbuffers::buffer_has_identifier(
-            &mut packet.buffer,
-            &expected_content.to_string(),
-            true,
-        ) {
+        if !flatbuffers::buffer_has_identifier(&packet.buffer, &expected_content.to_string(), true)
+        {
             return Some(Err(ParseError::new(
                 "the stream id and the identifier do not match",
             )));
