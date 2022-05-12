@@ -189,7 +189,7 @@ impl Decoder {
                         Some(content) => content,
                         None => return Err(ParseError::new("missing stream node id")),
                     }
-                    .parse::<u32>()?;
+                        .parse::<u32>()?;
                     let identifier = match stream_node.children().find(|node| {
                         node.is_element()
                             && node.has_tag_name("attr")
@@ -203,7 +203,7 @@ impl Decoder {
                         },
                         None => return Err(ParseError::new("missing stream node type identifier")),
                     }
-                    .to_string();
+                        .to_string();
                     let mut width = 0u16;
                     let mut height = 0u16;
                     if identifier == "EVTS" || identifier == "FRME" {
@@ -226,7 +226,7 @@ impl Decoder {
                             },
                             None => return Err(ParseError::new("missing sizeX attribute")),
                         }
-                        .parse::<u16>()?;
+                            .parse::<u16>()?;
                         height = match info_node.children().find(|node| {
                             node.is_element()
                                 && node.has_tag_name("attr")
@@ -238,7 +238,7 @@ impl Decoder {
                             },
                             None => return Err(ParseError::new("missing sizeX attribute")),
                         }
-                        .parse::<u16>()?;
+                            .parse::<u16>()?;
                     }
                     if decoder
                         .id_to_stream
@@ -329,7 +329,7 @@ impl Iterator for Decoder {
             Some(content) => content,
             None => return Some(Err(ParseError::new("unknown stream id"))),
         }
-        .content);
+            .content);
         if !flatbuffers::buffer_has_identifier(&packet.buffer, &expected_content.to_string(), true)
         {
             return Some(Err(ParseError::new(
