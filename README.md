@@ -9,3 +9,7 @@ This project was forked from https://github.com/neuromorphicsystems/aedat, to si
 # Documentation
 
 Refer to the [source project](https://github.com/neuromorphicsystems/aedat) for some documentation, especially [src/lib.rs](https://github.com/neuromorphicsystems/aedat/blob/master/src/lib.rs). Future work will focus on adding proper Cargo docs to the Rust code.
+
+# Development to-do list
+- [ ] Add docs
+- [ ] Use buffered file readers, if they prove to be faster
