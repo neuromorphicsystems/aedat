@@ -264,6 +264,7 @@ impl Decoder {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct Packet {
     pub buffer: std::vec::Vec<u8>,
     pub stream_id: u32,
