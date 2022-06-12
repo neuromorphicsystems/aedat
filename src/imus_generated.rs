@@ -24,6 +24,18 @@ impl<'a> flatbuffers::Follow<'a> for Imu<'a> {
 }
 
 impl<'a> Imu<'a> {
+    pub const VT_T: flatbuffers::VOffsetT = 4;
+    pub const VT_TEMPERATURE: flatbuffers::VOffsetT = 6;
+    pub const VT_ACCELEROMETER_X: flatbuffers::VOffsetT = 8;
+    pub const VT_ACCELEROMETER_Y: flatbuffers::VOffsetT = 10;
+    pub const VT_ACCELEROMETER_Z: flatbuffers::VOffsetT = 12;
+    pub const VT_GYROSCOPE_X: flatbuffers::VOffsetT = 14;
+    pub const VT_GYROSCOPE_Y: flatbuffers::VOffsetT = 16;
+    pub const VT_GYROSCOPE_Z: flatbuffers::VOffsetT = 18;
+    pub const VT_MAGNETOMETER_X: flatbuffers::VOffsetT = 20;
+    pub const VT_MAGNETOMETER_Y: flatbuffers::VOffsetT = 22;
+    pub const VT_MAGNETOMETER_Z: flatbuffers::VOffsetT = 24;
+
     #[inline]
     pub fn init_from_table(table: flatbuffers::Table<'a>) -> Self {
         Imu { _tab: table }
@@ -47,18 +59,6 @@ impl<'a> Imu<'a> {
         builder.add_temperature(args.temperature);
         builder.finish()
     }
-
-    pub const VT_T: flatbuffers::VOffsetT = 4;
-    pub const VT_TEMPERATURE: flatbuffers::VOffsetT = 6;
-    pub const VT_ACCELEROMETER_X: flatbuffers::VOffsetT = 8;
-    pub const VT_ACCELEROMETER_Y: flatbuffers::VOffsetT = 10;
-    pub const VT_ACCELEROMETER_Z: flatbuffers::VOffsetT = 12;
-    pub const VT_GYROSCOPE_X: flatbuffers::VOffsetT = 14;
-    pub const VT_GYROSCOPE_Y: flatbuffers::VOffsetT = 16;
-    pub const VT_GYROSCOPE_Z: flatbuffers::VOffsetT = 18;
-    pub const VT_MAGNETOMETER_X: flatbuffers::VOffsetT = 20;
-    pub const VT_MAGNETOMETER_Y: flatbuffers::VOffsetT = 22;
-    pub const VT_MAGNETOMETER_Z: flatbuffers::VOffsetT = 24;
 
     #[inline]
     pub fn t(&self) -> i64 {
@@ -134,17 +134,17 @@ impl flatbuffers::Verifiable for Imu<'_> {
     ) -> Result<(), flatbuffers::InvalidFlatbuffer> {
         use self::flatbuffers::Verifiable;
         v.visit_table(pos)?
-            .visit_field::<i64>(&"t", Self::VT_T, false)?
-            .visit_field::<f32>(&"temperature", Self::VT_TEMPERATURE, false)?
-            .visit_field::<f32>(&"accelerometer_x", Self::VT_ACCELEROMETER_X, false)?
-            .visit_field::<f32>(&"accelerometer_y", Self::VT_ACCELEROMETER_Y, false)?
-            .visit_field::<f32>(&"accelerometer_z", Self::VT_ACCELEROMETER_Z, false)?
-            .visit_field::<f32>(&"gyroscope_x", Self::VT_GYROSCOPE_X, false)?
-            .visit_field::<f32>(&"gyroscope_y", Self::VT_GYROSCOPE_Y, false)?
-            .visit_field::<f32>(&"gyroscope_z", Self::VT_GYROSCOPE_Z, false)?
-            .visit_field::<f32>(&"magnetometer_x", Self::VT_MAGNETOMETER_X, false)?
-            .visit_field::<f32>(&"magnetometer_y", Self::VT_MAGNETOMETER_Y, false)?
-            .visit_field::<f32>(&"magnetometer_z", Self::VT_MAGNETOMETER_Z, false)?
+            .visit_field::<i64>("t", Self::VT_T, false)?
+            .visit_field::<f32>("temperature", Self::VT_TEMPERATURE, false)?
+            .visit_field::<f32>("accelerometer_x", Self::VT_ACCELEROMETER_X, false)?
+            .visit_field::<f32>("accelerometer_y", Self::VT_ACCELEROMETER_Y, false)?
+            .visit_field::<f32>("accelerometer_z", Self::VT_ACCELEROMETER_Z, false)?
+            .visit_field::<f32>("gyroscope_x", Self::VT_GYROSCOPE_X, false)?
+            .visit_field::<f32>("gyroscope_y", Self::VT_GYROSCOPE_Y, false)?
+            .visit_field::<f32>("gyroscope_z", Self::VT_GYROSCOPE_Z, false)?
+            .visit_field::<f32>("magnetometer_x", Self::VT_MAGNETOMETER_X, false)?
+            .visit_field::<f32>("magnetometer_y", Self::VT_MAGNETOMETER_Y, false)?
+            .visit_field::<f32>("magnetometer_z", Self::VT_MAGNETOMETER_Z, false)?
             .finish();
         Ok(())
     }
@@ -180,6 +180,7 @@ impl<'a> Default for ImuArgs {
         }
     }
 }
+
 pub struct ImuBuilder<'a: 'b, 'b> {
     fbb_: &'b mut flatbuffers::FlatBufferBuilder<'a>,
     start_: flatbuffers::WIPOffset<flatbuffers::TableUnfinishedWIPOffset>,
@@ -289,6 +290,8 @@ impl<'a> flatbuffers::Follow<'a> for ImuPacket<'a> {
 }
 
 impl<'a> ImuPacket<'a> {
+    pub const VT_ELEMENTS: flatbuffers::VOffsetT = 4;
+
     #[inline]
     pub fn init_from_table(table: flatbuffers::Table<'a>) -> Self {
         ImuPacket { _tab: table }
@@ -304,8 +307,6 @@ impl<'a> ImuPacket<'a> {
         }
         builder.finish()
     }
-
-    pub const VT_ELEMENTS: flatbuffers::VOffsetT = 4;
 
     #[inline]
     pub fn elements(
@@ -327,7 +328,7 @@ impl flatbuffers::Verifiable for ImuPacket<'_> {
         v.visit_table(pos)?
             .visit_field::<flatbuffers::ForwardsUOffset<
                 flatbuffers::Vector<'_, flatbuffers::ForwardsUOffset<Imu>>,
-            >>(&"elements", Self::VT_ELEMENTS, false)?
+            >>("elements", Self::VT_ELEMENTS, false)?
             .finish();
         Ok(())
     }
@@ -343,6 +344,7 @@ impl<'a> Default for ImuPacketArgs<'a> {
         ImuPacketArgs { elements: None }
     }
 }
+
 pub struct ImuPacketBuilder<'a: 'b, 'b> {
     fbb_: &'b mut flatbuffers::FlatBufferBuilder<'a>,
     start_: flatbuffers::WIPOffset<flatbuffers::TableUnfinishedWIPOffset>,

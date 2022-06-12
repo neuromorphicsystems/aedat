@@ -196,9 +196,9 @@ impl pyo3::PyIterProtocol for Decoder {
                 python_frame.set_item(
                     "format",
                     match frame.format() {
-                        frame_generated::FrameFormat::Gray => "Gray",
-                        frame_generated::FrameFormat::Bgr => "BGR",
-                        frame_generated::FrameFormat::Bgra => "BGRA",
+                        frame_generated::FrameFormat::Gray => "L",
+                        frame_generated::FrameFormat::Bgr => "RGB",
+                        frame_generated::FrameFormat::Bgra => "RGBA",
                         _ => {
                             return Err(pyo3::PyErr::from(aedat::ParseError::new(
                                 "unknown frame format",
@@ -210,14 +210,51 @@ impl pyo3::PyIterProtocol for Decoder {
                 python_frame.set_item("height", frame.height())?;
                 python_frame.set_item("offset_x", frame.offset_x())?;
                 python_frame.set_item("offset_y", frame.offset_y())?;
-                let dimensions = [frame.height() as usize, frame.width() as usize].into_dimension();
-                python_frame.set_item(
-                    "pixels",
-                    match frame.pixels() {
-                        Some(result) => result.to_pyarray(python).reshape(dimensions)?,
-                        None => numpy::array::PyArray2::<u8>::zeros(python, dimensions, false),
-                    },
-                )?;
+                match frame.format() {
+                    frame_generated::FrameFormat::Gray => {
+                        let dimensions =
+                            [frame.height() as usize, frame.width() as usize].into_dimension();
+                        python_frame.set_item(
+                            "pixels",
+                            match frame.pixels() {
+                                Some(result) => result.to_pyarray(python).reshape(dimensions)?,
+                                None => {
+                                    numpy::array::PyArray2::<u8>::zeros(python, dimensions, false)
+                                }
+                            },
+                        )?;
+                    }
+                    frame_generated::FrameFormat::Bgr | frame_generated::FrameFormat::Bgra => {
+                        let channels = if frame.format() == frame_generated::FrameFormat::Bgr {
+                            3 as usize
+                        } else {
+                            4 as usize
+                        };
+                        let dimensions =
+                            [frame.height() as usize, frame.width() as usize, channels]
+                                .into_dimension();
+                        python_frame.set_item(
+                            "pixels",
+                            match frame.pixels() {
+                                Some(result) => {
+                                    let mut pixels = result.to_owned();
+                                    for index in 0..(pixels.len() / channels) {
+                                        pixels.swap(index * channels, index * channels + 2);
+                                    }
+                                    pixels.to_pyarray(python).reshape(dimensions)?
+                                }
+                                None => {
+                                    numpy::array::PyArray3::<u8>::zeros(python, dimensions, false)
+                                }
+                            },
+                        )?;
+                    }
+                    _ => {
+                        return Err(pyo3::PyErr::from(aedat::ParseError::new(
+                            "unknown frame format",
+                        )))
+                    }
+                }
                 python_packet.set_item("frame", python_frame)?;
             }
             aedat::StreamContent::Imus => {

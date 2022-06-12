@@ -133,6 +133,10 @@ impl<'a> flatbuffers::Follow<'a> for Ioheader<'a> {
 }
 
 impl<'a> Ioheader<'a> {
+    pub const VT_COMPRESSION: flatbuffers::VOffsetT = 4;
+    pub const VT_FILE_DATA_POSITION: flatbuffers::VOffsetT = 6;
+    pub const VT_DESCRIPTION: flatbuffers::VOffsetT = 8;
+
     #[inline]
     pub fn init_from_table(table: flatbuffers::Table<'a>) -> Self {
         Ioheader { _tab: table }
@@ -150,10 +154,6 @@ impl<'a> Ioheader<'a> {
         builder.add_compression(args.compression);
         builder.finish()
     }
-
-    pub const VT_COMPRESSION: flatbuffers::VOffsetT = 4;
-    pub const VT_FILE_DATA_POSITION: flatbuffers::VOffsetT = 6;
-    pub const VT_DESCRIPTION: flatbuffers::VOffsetT = 8;
 
     #[inline]
     pub fn compression(&self) -> Compression {
@@ -182,10 +182,10 @@ impl flatbuffers::Verifiable for Ioheader<'_> {
     ) -> Result<(), flatbuffers::InvalidFlatbuffer> {
         use self::flatbuffers::Verifiable;
         v.visit_table(pos)?
-            .visit_field::<Compression>(&"compression", Self::VT_COMPRESSION, false)?
-            .visit_field::<i64>(&"file_data_position", Self::VT_FILE_DATA_POSITION, false)?
+            .visit_field::<Compression>("compression", Self::VT_COMPRESSION, false)?
+            .visit_field::<i64>("file_data_position", Self::VT_FILE_DATA_POSITION, false)?
             .visit_field::<flatbuffers::ForwardsUOffset<&str>>(
-                &"description",
+                "description",
                 Self::VT_DESCRIPTION,
                 false,
             )?
@@ -208,6 +208,7 @@ impl<'a> Default for IoheaderArgs<'a> {
         }
     }
 }
+
 pub struct IoheaderBuilder<'a: 'b, 'b> {
     fbb_: &'b mut flatbuffers::FlatBufferBuilder<'a>,
     start_: flatbuffers::WIPOffset<flatbuffers::TableUnfinishedWIPOffset>,

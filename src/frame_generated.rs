@@ -118,6 +118,18 @@ impl<'a> flatbuffers::Follow<'a> for Frame<'a> {
 }
 
 impl<'a> Frame<'a> {
+    pub const VT_T: flatbuffers::VOffsetT = 4;
+    pub const VT_BEGIN_T: flatbuffers::VOffsetT = 6;
+    pub const VT_END_T: flatbuffers::VOffsetT = 8;
+    pub const VT_EXPOSURE_BEGIN_T: flatbuffers::VOffsetT = 10;
+    pub const VT_EXPOSURE_END_T: flatbuffers::VOffsetT = 12;
+    pub const VT_FORMAT: flatbuffers::VOffsetT = 14;
+    pub const VT_WIDTH: flatbuffers::VOffsetT = 16;
+    pub const VT_HEIGHT: flatbuffers::VOffsetT = 18;
+    pub const VT_OFFSET_X: flatbuffers::VOffsetT = 20;
+    pub const VT_OFFSET_Y: flatbuffers::VOffsetT = 22;
+    pub const VT_PIXELS: flatbuffers::VOffsetT = 24;
+
     #[inline]
     pub fn init_from_table(table: flatbuffers::Table<'a>) -> Self {
         Frame { _tab: table }
@@ -143,18 +155,6 @@ impl<'a> Frame<'a> {
         builder.add_format(args.format);
         builder.finish()
     }
-
-    pub const VT_T: flatbuffers::VOffsetT = 4;
-    pub const VT_BEGIN_T: flatbuffers::VOffsetT = 6;
-    pub const VT_END_T: flatbuffers::VOffsetT = 8;
-    pub const VT_EXPOSURE_BEGIN_T: flatbuffers::VOffsetT = 10;
-    pub const VT_EXPOSURE_END_T: flatbuffers::VOffsetT = 12;
-    pub const VT_FORMAT: flatbuffers::VOffsetT = 14;
-    pub const VT_WIDTH: flatbuffers::VOffsetT = 16;
-    pub const VT_HEIGHT: flatbuffers::VOffsetT = 18;
-    pub const VT_OFFSET_X: flatbuffers::VOffsetT = 20;
-    pub const VT_OFFSET_Y: flatbuffers::VOffsetT = 22;
-    pub const VT_PIXELS: flatbuffers::VOffsetT = 24;
 
     #[inline]
     pub fn t(&self) -> i64 {
@@ -221,18 +221,18 @@ impl flatbuffers::Verifiable for Frame<'_> {
     ) -> Result<(), flatbuffers::InvalidFlatbuffer> {
         use self::flatbuffers::Verifiable;
         v.visit_table(pos)?
-            .visit_field::<i64>(&"t", Self::VT_T, false)?
-            .visit_field::<i64>(&"begin_t", Self::VT_BEGIN_T, false)?
-            .visit_field::<i64>(&"end_t", Self::VT_END_T, false)?
-            .visit_field::<i64>(&"exposure_begin_t", Self::VT_EXPOSURE_BEGIN_T, false)?
-            .visit_field::<i64>(&"exposure_end_t", Self::VT_EXPOSURE_END_T, false)?
-            .visit_field::<FrameFormat>(&"format", Self::VT_FORMAT, false)?
-            .visit_field::<i16>(&"width", Self::VT_WIDTH, false)?
-            .visit_field::<i16>(&"height", Self::VT_HEIGHT, false)?
-            .visit_field::<i16>(&"offset_x", Self::VT_OFFSET_X, false)?
-            .visit_field::<i16>(&"offset_y", Self::VT_OFFSET_Y, false)?
+            .visit_field::<i64>("t", Self::VT_T, false)?
+            .visit_field::<i64>("begin_t", Self::VT_BEGIN_T, false)?
+            .visit_field::<i64>("end_t", Self::VT_END_T, false)?
+            .visit_field::<i64>("exposure_begin_t", Self::VT_EXPOSURE_BEGIN_T, false)?
+            .visit_field::<i64>("exposure_end_t", Self::VT_EXPOSURE_END_T, false)?
+            .visit_field::<FrameFormat>("format", Self::VT_FORMAT, false)?
+            .visit_field::<i16>("width", Self::VT_WIDTH, false)?
+            .visit_field::<i16>("height", Self::VT_HEIGHT, false)?
+            .visit_field::<i16>("offset_x", Self::VT_OFFSET_X, false)?
+            .visit_field::<i16>("offset_y", Self::VT_OFFSET_Y, false)?
             .visit_field::<flatbuffers::ForwardsUOffset<flatbuffers::Vector<'_, u8>>>(
-                &"pixels",
+                "pixels",
                 Self::VT_PIXELS,
                 false,
             )?
@@ -271,6 +271,7 @@ impl<'a> Default for FrameArgs<'a> {
         }
     }
 }
+
 pub struct FrameBuilder<'a: 'b, 'b> {
     fbb_: &'b mut flatbuffers::FlatBufferBuilder<'a>,
     start_: flatbuffers::WIPOffset<flatbuffers::TableUnfinishedWIPOffset>,

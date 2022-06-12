@@ -153,6 +153,9 @@ impl<'a> flatbuffers::Follow<'a> for Trigger<'a> {
 }
 
 impl<'a> Trigger<'a> {
+    pub const VT_T: flatbuffers::VOffsetT = 4;
+    pub const VT_SOURCE: flatbuffers::VOffsetT = 6;
+
     #[inline]
     pub fn init_from_table(table: flatbuffers::Table<'a>) -> Self {
         Trigger { _tab: table }
@@ -167,9 +170,6 @@ impl<'a> Trigger<'a> {
         builder.add_source(args.source);
         builder.finish()
     }
-
-    pub const VT_T: flatbuffers::VOffsetT = 4;
-    pub const VT_SOURCE: flatbuffers::VOffsetT = 6;
 
     #[inline]
     pub fn t(&self) -> i64 {
@@ -191,8 +191,8 @@ impl flatbuffers::Verifiable for Trigger<'_> {
     ) -> Result<(), flatbuffers::InvalidFlatbuffer> {
         use self::flatbuffers::Verifiable;
         v.visit_table(pos)?
-            .visit_field::<i64>(&"t", Self::VT_T, false)?
-            .visit_field::<TriggerSource>(&"source", Self::VT_SOURCE, false)?
+            .visit_field::<i64>("t", Self::VT_T, false)?
+            .visit_field::<TriggerSource>("source", Self::VT_SOURCE, false)?
             .finish();
         Ok(())
     }
@@ -210,6 +210,7 @@ impl<'a> Default for TriggerArgs {
         }
     }
 }
+
 pub struct TriggerBuilder<'a: 'b, 'b> {
     fbb_: &'b mut flatbuffers::FlatBufferBuilder<'a>,
     start_: flatbuffers::WIPOffset<flatbuffers::TableUnfinishedWIPOffset>,
@@ -268,6 +269,8 @@ impl<'a> flatbuffers::Follow<'a> for TriggerPacket<'a> {
 }
 
 impl<'a> TriggerPacket<'a> {
+    pub const VT_ELEMENTS: flatbuffers::VOffsetT = 4;
+
     #[inline]
     pub fn init_from_table(table: flatbuffers::Table<'a>) -> Self {
         TriggerPacket { _tab: table }
@@ -283,8 +286,6 @@ impl<'a> TriggerPacket<'a> {
         }
         builder.finish()
     }
-
-    pub const VT_ELEMENTS: flatbuffers::VOffsetT = 4;
 
     #[inline]
     pub fn elements(
@@ -306,7 +307,7 @@ impl flatbuffers::Verifiable for TriggerPacket<'_> {
         v.visit_table(pos)?
             .visit_field::<flatbuffers::ForwardsUOffset<
                 flatbuffers::Vector<'_, flatbuffers::ForwardsUOffset<Trigger>>,
-            >>(&"elements", Self::VT_ELEMENTS, false)?
+            >>("elements", Self::VT_ELEMENTS, false)?
             .finish();
         Ok(())
     }
@@ -322,6 +323,7 @@ impl<'a> Default for TriggerPacketArgs<'a> {
         TriggerPacketArgs { elements: None }
     }
 }
+
 pub struct TriggerPacketBuilder<'a: 'b, 'b> {
     fbb_: &'b mut flatbuffers::FlatBufferBuilder<'a>,
     start_: flatbuffers::WIPOffset<flatbuffers::TableUnfinishedWIPOffset>,

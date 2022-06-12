@@ -74,6 +74,7 @@ impl<'a> flatbuffers::Verifiable for Event {
         v.in_buffer::<Self>(pos)
     }
 }
+
 impl<'a> Event {
     #[allow(clippy::too_many_arguments)]
     pub fn new(t: i64, x: i16, y: i16, on: bool) -> Self {
@@ -200,6 +201,8 @@ impl<'a> flatbuffers::Follow<'a> for EventPacket<'a> {
 }
 
 impl<'a> EventPacket<'a> {
+    pub const VT_ELEMENTS: flatbuffers::VOffsetT = 4;
+
     #[inline]
     pub fn init_from_table(table: flatbuffers::Table<'a>) -> Self {
         EventPacket { _tab: table }
@@ -215,8 +218,6 @@ impl<'a> EventPacket<'a> {
         }
         builder.finish()
     }
-
-    pub const VT_ELEMENTS: flatbuffers::VOffsetT = 4;
 
     #[inline]
     pub fn elements(&self) -> Option<&'a [Event]> {
@@ -238,7 +239,7 @@ impl flatbuffers::Verifiable for EventPacket<'_> {
         use self::flatbuffers::Verifiable;
         v.visit_table(pos)?
             .visit_field::<flatbuffers::ForwardsUOffset<flatbuffers::Vector<'_, Event>>>(
-                &"elements",
+                "elements",
                 Self::VT_ELEMENTS,
                 false,
             )?
@@ -255,6 +256,7 @@ impl<'a> Default for EventPacketArgs<'a> {
         EventPacketArgs { elements: None }
     }
 }
+
 pub struct EventPacketBuilder<'a: 'b, 'b> {
     fbb_: &'b mut flatbuffers::FlatBufferBuilder<'a>,
     start_: flatbuffers::WIPOffset<flatbuffers::TableUnfinishedWIPOffset>,
