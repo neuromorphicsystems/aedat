@@ -1,14 +1,22 @@
-# AEDAT
-
 AEDAT is a fast AEDAT 4 python reader, with a Rust underlying implementation.
 
 Run `pip install aedat` to install it.
 
-# Documentation
+- [Example](#example)
+- [Process frames](#process-frames)
+    - [Pillow (PIL)](#pillow-pil)
+    - [OpenCV](#opencv)
+- [Detailed example](#detailed-example)
+- [Install from source](#install-from-source)
+    - [Linux](#linux)
+    - [macOS](#macos)
+    - [Windows](#windows)
+- [Contribute](#contribute)
+- [Publish](#publish)
+
+## Example
 
 The `aedat` library provides a single class: `Decoder`. A decoder object is created by passing a file name to `Decoder`. The file name must be a [path-like object](https://docs.python.org/3/glossary.html#term-path-like-object).
-
-Here's a short example:
 
 ```python
 import aedat
@@ -28,7 +36,9 @@ for packet in decoder:
         print("{} trigger events".format(len(packet["triggers"])))
 ```
 
-One can load image pixels as a PIL Image object that can be edited or saved to a file:
+## Process frames
+
+### Pillow (PIL)
 
 ```py
 import aedat
@@ -37,9 +47,33 @@ import PIL.Image # https://pypi.org/project/Pillow/
 index = 0
 for packet in decoder:
     if "frame" in packet:
-        image = PIL.Image.fromarray(packet["frame"]["pixels"], mode=packet["frame"]["format"])
+        image = PIL.Image.fromarray
+            packet["frame"]["pixels"],
+            mode=packet["frame"]["format"],
+        )
         image.save(f"{index}.png")
+        index += 1
 ```
+
+### OpenCV
+
+```py
+import aedat
+import cv2 # https://pypi.org/project/opencv-python/
+
+index = 0
+for packet in decoder:
+    if "frame" in packet:
+        image = packet["frame"]["pixels"]
+        if packet["frame"]["format"] == "RGB":
+            image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+        elif packet["frame"]["format"] == "RGBA":
+            image = cv2.cvtColor(image, cv2.COLOR_RGBA2BGRA)
+        cv2.imwrite(f"{index}.png", image)
+        index += 1
+```
+
+## Detailed example
 
 This is the same as the first example, with detailed comments:
 
@@ -155,7 +189,7 @@ decoder = aedat.Decoder("/path/to/file.aedat")
 decoder = None
 ```
 
-# Install from source
+## Install from source
 
 This library requires [Python 3.x](https://www.python.org), x >= 5, and [NumPy](https://numpy.org). This guide assumes that they are installed on your machine.
 
@@ -163,7 +197,7 @@ Note for Windows users: this library requires the x86-64 version of Python. You 
 
 A Rust compiling toolchain is required during the installation (but can be removed afterwards).
 
-## Linux
+### Linux
 
 ```sh
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
@@ -175,7 +209,7 @@ cp target/release/libaedat.so aedat.so
 
 You can `import aedat` from python scripts in the same directory as _aedat.so_, which can be placed in any directory.
 
-## macOS
+### macOS
 
 ```sh
 brew install rustup
@@ -188,7 +222,7 @@ cp target/release/libaedat.dylib aedat.so
 
 You can `import aedat` from python scripts in the same directory as _aedat.so_, which can be placed in any directory.
 
-## Windows
+### Windows
 
 1. install rustup (instructions availables at https://www.rust-lang.org/tools/install)
 2. clone or download this repository
@@ -201,7 +235,7 @@ copy .\target\release\aedat.dll .\aedat.pyd
 
 You can `import aedat` from python scripts in the same directory as _aedat.pyd_, which can be placed in any directory.
 
-# Contribute
+## Contribute
 
 After changing any of the files in _framebuffers_, one must run:
 
@@ -221,7 +255,7 @@ You may need to install rustfmt first with:
 rustup component add rustfmt
 ```
 
-# Publish
+## Publish
 
 1. Bump the version number in _Cargo.toml_.
 
