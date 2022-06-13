@@ -47,7 +47,7 @@ import PIL.Image # https://pypi.org/project/Pillow/
 index = 0
 for packet in decoder:
     if "frame" in packet:
-        image = PIL.Image.fromarray
+        image = PIL.Image.fromarray(
             packet["frame"]["pixels"],
             mode=packet["frame"]["format"],
         )
