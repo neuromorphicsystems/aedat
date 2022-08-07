@@ -277,6 +277,6 @@ pip3 install twine
 4. Upload the compiled wheels and the source code to PyPI:
 
 ```
-maturin build --out wheels --interpreter /usr/local/bin/python3
+maturin sdist --out wheels
 python3 -m twine upload wheels/*
 ```
