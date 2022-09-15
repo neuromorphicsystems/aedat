@@ -1,6 +1,6 @@
 use std::fs::File;
 use std::io::Read;
-use std::net::TcpStream;
+use std::net::{TcpStream, ToSocketAddrs};
 use std::os::unix::net::UnixStream;
 use crate::base::ioheader_generated::Compression;
 
@@ -61,6 +61,7 @@ impl std::convert::From<flatbuffers::InvalidFlatbuffer> for ParseError {
     }
 }
 
+
 impl std::convert::From<std::str::Utf8Error> for ParseError {
     fn from(error: std::str::Utf8Error) -> Self {
         ParseError {
@@ -85,7 +86,9 @@ impl std::convert::From<std::num::ParseIntError> for ParseError {
     }
 }
 
-pub trait Source {}
+
+
+trait Source:std::io::Read {}
 impl Source for File {}
 impl Source for UnixStream {}
 impl Source for TcpStream {}
@@ -130,19 +133,19 @@ pub struct Stream {
     pub height: u16,
 }
 
-pub struct Decoder<T: Source> {
+pub struct Decoder {
     pub id_to_stream: std::collections::HashMap<u32, Stream>,
-    file: T,
+    file: Box<dyn Source>,
     position: i64,
     compression: ioheader_generated::Compression,
     file_data_position: i64,
 }
 
-impl Decoder<File> {
-    pub fn new<P: std::convert::AsRef<std::path::Path>>(path: P) -> Result<Self, ParseError> {
+impl Decoder {
+    pub fn new_from_file<P: std::convert::AsRef<std::path::Path>>(path: P) -> Result<Self, ParseError> {
         let mut decoder = Decoder {
             id_to_stream: std::collections::HashMap::new(),
-            file: std::fs::File::open(path)?,
+            file: Box::new(std::fs::File::open(path)?),
             position: 0i64,
             file_data_position: 0,
             compression: ioheader_generated::Compression::None,
@@ -271,9 +274,38 @@ impl Decoder<File> {
         }
         Ok(decoder)
     }
+
+    pub fn new_from_unix_stream<P: std::convert::AsRef<std::path::Path> + Clone>(
+        path: P, content: StreamContent, compression: Compression, width: u16, height: u16) -> Result<Self, ParseError> {
+        let decoder = Decoder {
+            id_to_stream: std::collections::HashMap::new(),
+            file: Box::new(UnixStream::connect(path)?),
+            position: 0i64,
+            file_data_position: -1,
+            compression,
+        };
+        setup_for_socket(decoder, content, width, height)
+    }
+
+    pub fn new_from_tcp_stream<P: ToSocketAddrs + Clone>(
+        path: P,
+        content: StreamContent,
+        compression: Compression,
+        width: u16,
+        height: u16
+    ) -> Result<Self, ParseError> {
+        let decoder = Decoder {
+            id_to_stream: std::collections::HashMap::new(),
+            file: Box::new(TcpStream::connect(path)?),
+            position: 0i64,
+            file_data_position: -1,
+            compression,
+        };
+        setup_for_socket(decoder, content, width, height)
+    }
 }
 
-fn setup_for_socket<T: Source>(mut decoder: Decoder<T>, content: StreamContent, width: u16, height: u16) -> Result<Decoder<T>, ParseError>{
+fn setup_for_socket(mut decoder: Decoder, content: StreamContent, width: u16, height: u16) -> Result<Decoder, ParseError>{
     if decoder
         .id_to_stream
         .insert(
@@ -291,46 +323,13 @@ fn setup_for_socket<T: Source>(mut decoder: Decoder<T>, content: StreamContent, 
     Ok(decoder)
 }
 
-impl Decoder<UnixStream> {
-    pub fn new<P: std::convert::AsRef<std::path::Path> + Clone>(
-        path: P, content: StreamContent, compression: Compression, width: u16, height: u16) -> Result<Self, ParseError> {
-        let decoder = Decoder {
-            id_to_stream: std::collections::HashMap::new(),
-            file: UnixStream::connect(path)?,
-            position: 0i64,
-            file_data_position: -1,
-            compression,
-        };
-        setup_for_socket(decoder, content, width, height)
-    }
-}
-
-impl Decoder<TcpStream> {
-    pub fn new<P: std::convert::AsRef<std::path::Path> + Clone + std::net::ToSocketAddrs>(
-        path: P,
-        content: StreamContent,
-        compression: Compression,
-        width: u16,
-        height: u16
-    ) -> Result<Self, ParseError> {
-        let decoder = Decoder {
-            id_to_stream: std::collections::HashMap::new(),
-            file: TcpStream::connect(path)?,
-            position: 0i64,
-            file_data_position: -1,
-            compression,
-        };
-        setup_for_socket(decoder, content, width, height)
-    }
-}
-
 #[derive(Debug, Clone)]
 pub struct Packet {
     pub buffer: std::vec::Vec<u8>,
     pub stream_id: u32,
 }
 
-impl <T: std::io::Read + Source> Iterator for Decoder<T> {
+impl Iterator for Decoder {
     type Item = Result<Packet, ParseError>;
 
     fn next(&mut self) -> Option<Self::Item> {
