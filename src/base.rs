@@ -6,7 +6,7 @@ use crate::base::ioheader_generated::Compression;
 
 #[allow(dead_code, unused_imports)]
 #[path = "./ioheader_generated.rs"]
-mod ioheader_generated;
+pub mod ioheader_generated;
 
 #[allow(dead_code, unused_imports)]
 #[path = "./events_generated.rs"]
