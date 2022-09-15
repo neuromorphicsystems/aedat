@@ -83,8 +83,8 @@ impl std::convert::From<std::num::ParseIntError> for ParseError {
 }
 
 pub enum StreamContent {
-    Events,
     Frame,
+    Events, // TMP
     Imus,
     Triggers,
 }
@@ -268,20 +268,34 @@ impl Decoder {
         // }
 
         // TMP
+        // if decoder
+        //                 .id_to_stream
+        //                 .insert(
+        //                     0,
+        //                     Stream {
+        //                         content: StreamContent::from("EVTS")?,
+        //                         width: 346,
+        //                         height: 260,
+        //                     },
+        //                 )
+        //                 .is_some()
+        //             {
+        //                 return Err(ParseError::new("duplicated stream id"));
+        //             }
         if decoder
-                        .id_to_stream
-                        .insert(
-                            0,
-                            Stream {
-                                content: StreamContent::from("EVTS")?,
-                                width: 346,
-                                height: 260,
-                            },
-                        )
-                        .is_some()
-                    {
-                        return Err(ParseError::new("duplicated stream id"));
-                    }
+            .id_to_stream
+            .insert(
+                0,
+                Stream {
+                    content: StreamContent::from("FRME")?,
+                    width: 346,
+                    height: 260,
+                },
+            )
+            .is_some()
+        {
+            return Err(ParseError::new("duplicated stream id"));
+        }
         Ok(decoder)
     }
 }
