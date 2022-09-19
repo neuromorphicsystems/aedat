@@ -1,8 +1,13 @@
+use std::fs::File;
 use std::io::Read;
+use std::net::{TcpStream, ToSocketAddrs};
+use std::os::unix::net::UnixStream;
+use crate::base::ioheader_generated::Compression;
+use num_derive::FromPrimitive;
 
 #[allow(dead_code, unused_imports)]
 #[path = "./ioheader_generated.rs"]
-mod ioheader_generated;
+pub mod ioheader_generated;
 
 #[allow(dead_code, unused_imports)]
 #[path = "./events_generated.rs"]
@@ -57,6 +62,7 @@ impl std::convert::From<flatbuffers::InvalidFlatbuffer> for ParseError {
     }
 }
 
+
 impl std::convert::From<std::str::Utf8Error> for ParseError {
     fn from(error: std::str::Utf8Error) -> Self {
         ParseError {
@@ -81,6 +87,14 @@ impl std::convert::From<std::num::ParseIntError> for ParseError {
     }
 }
 
+
+
+trait Source:std::io::Read {}
+impl Source for File {}
+impl Source for UnixStream {}
+impl Source for TcpStream {}
+
+#[derive(FromPrimitive, Copy, Clone)]
 pub enum StreamContent {
     Events,
     Frame,
@@ -123,17 +137,19 @@ pub struct Stream {
 
 pub struct Decoder {
     pub id_to_stream: std::collections::HashMap<u32, Stream>,
-    file: std::fs::File,
+    file: Box<dyn Source>,
     position: i64,
     compression: ioheader_generated::Compression,
     file_data_position: i64,
 }
 
+unsafe impl Send for Decoder {}
+
 impl Decoder {
-    pub fn new<P: std::convert::AsRef<std::path::Path>>(path: P) -> Result<Self, ParseError> {
+    pub fn new_from_file<P: std::convert::AsRef<std::path::Path>>(path: P) -> Result<Self, ParseError> {
         let mut decoder = Decoder {
             id_to_stream: std::collections::HashMap::new(),
-            file: std::fs::File::open(path)?,
+            file: Box::new(std::fs::File::open(path)?),
             position: 0i64,
             file_data_position: 0,
             compression: ioheader_generated::Compression::None,
@@ -262,6 +278,53 @@ impl Decoder {
         }
         Ok(decoder)
     }
+
+    pub fn new_from_unix_stream<P: std::convert::AsRef<std::path::Path> + Clone>(
+        path: P, content: StreamContent, compression: Compression, width: u16, height: u16) -> Result<Self, ParseError> {
+        let decoder = Decoder {
+            id_to_stream: std::collections::HashMap::new(),
+            file: Box::new(UnixStream::connect(path)?),
+            position: 0i64,
+            file_data_position: -1,
+            compression,
+        };
+        setup_for_socket(decoder, content, width, height)
+    }
+
+    pub fn new_from_tcp_stream<P: ToSocketAddrs + Clone>(
+        path: P,
+        content: StreamContent,
+        compression: Compression,
+        width: u16,
+        height: u16
+    ) -> Result<Self, ParseError> {
+        let decoder = Decoder {
+            id_to_stream: std::collections::HashMap::new(),
+            file: Box::new(TcpStream::connect(path)?),
+            position: 0i64,
+            file_data_position: -1,
+            compression,
+        };
+        setup_for_socket(decoder, content, width, height)
+    }
+}
+
+fn setup_for_socket(mut decoder: Decoder, content: StreamContent, width: u16, height: u16) -> Result<Decoder, ParseError>{
+    if decoder
+        .id_to_stream
+        .insert(
+            0,
+            Stream {
+                content,
+                width,
+                height,
+            },
+        )
+        .is_some()
+    {
+        return Err(ParseError::new("duplicated stream id"));
+    }
+    Ok(decoder)
 }
 
 #[derive(Debug, Clone)]

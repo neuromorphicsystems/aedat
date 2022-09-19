@@ -1,6 +1,6 @@
 [package]
 name = "aedat"
-version = "1.2.6"
+version = "1.2.7"
 authors = ["International Centre for Neuromorphic Systems", "Alexandre Marcireau", "Andrew C. Freeman"]
 description = "A fast AEDAT4 Rust implementation. Forked from https://github.com/neuromorphicsystems/aedat, a Rust AEDAT4 decoder for Python projects."
 homepage = "https://github.com/andrewcfreeman/aedat-rs"
@@ -25,3 +25,5 @@ lz4 = "1.23.2"
 ndarray = "0.15.3"
 roxmltree = "0.14.1"
 zstd = "0.9.0"
+num-traits = "0.2.15"
+num-derive = "0.3.3"
