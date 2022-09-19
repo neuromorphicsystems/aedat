@@ -3,6 +3,7 @@ use std::io::Read;
 use std::net::{TcpStream, ToSocketAddrs};
 use std::os::unix::net::UnixStream;
 use crate::base::ioheader_generated::Compression;
+use num_derive::FromPrimitive;
 
 #[allow(dead_code, unused_imports)]
 #[path = "./ioheader_generated.rs"]
@@ -93,6 +94,7 @@ impl Source for File {}
 impl Source for UnixStream {}
 impl Source for TcpStream {}
 
+#[derive(FromPrimitive, Copy, Clone)]
 pub enum StreamContent {
     Events,
     Frame,
@@ -140,6 +142,8 @@ pub struct Decoder {
     compression: ioheader_generated::Compression,
     file_data_position: i64,
 }
+
+unsafe impl Send for Decoder {}
 
 impl Decoder {
     pub fn new_from_file<P: std::convert::AsRef<std::path::Path>>(path: P) -> Result<Self, ParseError> {
