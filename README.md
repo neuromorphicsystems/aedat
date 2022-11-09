@@ -255,28 +255,8 @@ You may need to install rustfmt first with:
 rustup component add rustfmt
 ```
 
-## Publish
+# Publish
 
-1. Bump the version number in _Cargo.toml_.
+1. Bump the version number in _setup.py_.
 
-2. Install Cubuzoa in a different directory (https://github.com/neuromorphicsystems/cubuzoa) to build pre-compiled versions for all major operating systems. Cubuzoa depends on VirtualBox (with its extension pack) and requires about 100 GB of free disk space.
-
-```
-cd cubuzoa
-python3 -m cubuzoa provision
-python3 -m cubuzoa build /path/to/aedat --post /path/to/aedat/test.py
-```
-
-3. Install maturin and twine
-
-```
-pip3 install maturin
-pip3 install twine
-```
-
-4. Upload the compiled wheels and the source code to PyPI:
-
-```
-maturin sdist --out wheels
-python3 -m twine upload wheels/*
-```
+2. Create a new release on GitHub.
