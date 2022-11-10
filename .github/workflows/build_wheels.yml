@@ -26,9 +26,9 @@ jobs:
               with:
                   profile: minimal
                   toolchain: stable
-            - run: rustup toolchain install stable-aarch64-apple-darwin
+            - run: rustup target add aarch64-apple-darwin
               if: startsWith(matrix.os, 'macos')
-            - run: rustup toolchain install stable-i686-pc-windows-msvc
+            - run: rustup target add i686-pc-windows-msvc
               if: startsWith(matrix.os, 'windows')
             - uses: pypa/cibuildwheel@v2.11.2
             - uses: actions/upload-artifact@v3
