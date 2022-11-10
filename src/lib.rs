@@ -6,18 +6,6 @@ use numpy::Element;
 extern crate pyo3;
 use pyo3::prelude::*;
 mod aedat_core;
-#[allow(dead_code, unused_imports)]
-#[path = "./events_generated.rs"]
-mod events_generated;
-#[allow(dead_code, unused_imports)]
-#[path = "./frame_generated.rs"]
-mod frame_generated;
-#[allow(dead_code, unused_imports)]
-#[path = "./imus_generated.rs"]
-mod imus_generated;
-#[allow(dead_code, unused_imports)]
-#[path = "./triggers_generated.rs"]
-mod triggers_generated;
 
 impl std::convert::From<aedat_core::ParseError> for pyo3::PyErr {
     fn from(error: aedat_core::ParseError) -> Self {
@@ -93,23 +81,24 @@ impl Decoder {
                 .content
             {
                 aedat_core::StreamContent::Events => {
-                    let events = match events_generated::size_prefixed_root_as_event_packet(
-                        &packet.buffer,
-                    ) {
-                        Ok(result) => match result.elements() {
-                            Some(result) => result,
-                            None => {
+                    let events =
+                        match aedat_core::events_generated::size_prefixed_root_as_event_packet(
+                            &packet.buffer,
+                        ) {
+                            Ok(result) => match result.elements() {
+                                Some(result) => result,
+                                None => {
+                                    return Err(pyo3::PyErr::from(aedat_core::ParseError::new(
+                                        "empty events packet",
+                                    )))
+                                }
+                            },
+                            Err(_) => {
                                 return Err(pyo3::PyErr::from(aedat_core::ParseError::new(
-                                    "empty events packet",
+                                    "the packet does not have a size prefix",
                                 )))
                             }
-                        },
-                        Err(_) => {
-                            return Err(pyo3::PyErr::from(aedat_core::ParseError::new(
-                                "the packet does not have a size prefix",
-                            )))
-                        }
-                    };
+                        };
                     let mut length = events.len() as numpy::npyffi::npy_intp;
                     python_packet.set_item("events", unsafe {
                         let dtype_as_list = pyo3::ffi::PyList_New(4_isize);
@@ -174,14 +163,15 @@ impl Decoder {
                             *(event_cell.offset(0) as *mut u64) = event.t() as u64;
                             *(event_cell.offset(8) as *mut u16) = event.x() as u16;
                             *(event_cell.offset(10) as *mut u16) = event.y() as u16;
-                            *(event_cell.offset(12) as *mut u8) =
-                                if event.on() { 1u8 } else { 0u8 };
+                            *(event_cell.offset(12) as *mut u8) = u8::from(event.on());
                         }
                         PyObject::from_owned_ptr(python, array as *mut pyo3::ffi::PyObject)
                     })?;
                 }
                 aedat_core::StreamContent::Frame => {
-                    let frame = match frame_generated::size_prefixed_root_as_frame(&packet.buffer) {
+                    let frame = match aedat_core::frame_generated::size_prefixed_root_as_frame(
+                        &packet.buffer,
+                    ) {
                         Ok(result) => result,
                         Err(_) => {
                             return Err(pyo3::PyErr::from(aedat_core::ParseError::new(
@@ -198,9 +188,9 @@ impl Decoder {
                     python_frame.set_item(
                         "format",
                         match frame.format() {
-                            frame_generated::FrameFormat::Gray => "L",
-                            frame_generated::FrameFormat::Bgr => "RGB",
-                            frame_generated::FrameFormat::Bgra => "RGBA",
+                            aedat_core::frame_generated::FrameFormat::Gray => "L",
+                            aedat_core::frame_generated::FrameFormat::Bgr => "RGB",
+                            aedat_core::frame_generated::FrameFormat::Bgra => "RGBA",
                             _ => {
                                 return Err(pyo3::PyErr::from(aedat_core::ParseError::new(
                                     "unknown frame format",
@@ -213,7 +203,7 @@ impl Decoder {
                     python_frame.set_item("offset_x", frame.offset_x())?;
                     python_frame.set_item("offset_y", frame.offset_y())?;
                     match frame.format() {
-                        frame_generated::FrameFormat::Gray => {
+                        aedat_core::frame_generated::FrameFormat::Gray => {
                             let dimensions =
                                 [frame.height() as usize, frame.width() as usize].into_dimension();
                             python_frame.set_item(
@@ -228,11 +218,14 @@ impl Decoder {
                                 },
                             )?;
                         }
-                        frame_generated::FrameFormat::Bgr | frame_generated::FrameFormat::Bgra => {
-                            let channels = if frame.format() == frame_generated::FrameFormat::Bgr {
-                                3 as usize
+                        aedat_core::frame_generated::FrameFormat::Bgr
+                        | aedat_core::frame_generated::FrameFormat::Bgra => {
+                            let channels = if frame.format()
+                                == aedat_core::frame_generated::FrameFormat::Bgr
+                            {
+                                3_usize
                             } else {
-                                4 as usize
+                                4_usize
                             };
                             let dimensions =
                                 [frame.height() as usize, frame.width() as usize, channels]
@@ -262,22 +255,23 @@ impl Decoder {
                     python_packet.set_item("frame", python_frame)?;
                 }
                 aedat_core::StreamContent::Imus => {
-                    let imus =
-                        match imus_generated::size_prefixed_root_as_imu_packet(&packet.buffer) {
-                            Ok(result) => match result.elements() {
-                                Some(result) => result,
-                                None => {
-                                    return Err(pyo3::PyErr::from(aedat_core::ParseError::new(
-                                        "empty events packet",
-                                    )))
-                                }
-                            },
-                            Err(_) => {
+                    let imus = match aedat_core::imus_generated::size_prefixed_root_as_imu_packet(
+                        &packet.buffer,
+                    ) {
+                        Ok(result) => match result.elements() {
+                            Some(result) => result,
+                            None => {
                                 return Err(pyo3::PyErr::from(aedat_core::ParseError::new(
-                                    "the packet does not have a size prefix",
+                                    "empty events packet",
                                 )))
                             }
-                        };
+                        },
+                        Err(_) => {
+                            return Err(pyo3::PyErr::from(aedat_core::ParseError::new(
+                                "the packet does not have a size prefix",
+                            )))
+                        }
+                    };
                     let mut length = imus.len() as numpy::npyffi::npy_intp;
                     python_packet.set_item("imus", unsafe {
                         let dtype_as_list = pyo3::ffi::PyList_New(11_isize);
@@ -405,23 +399,24 @@ impl Decoder {
                     })?;
                 }
                 aedat_core::StreamContent::Triggers => {
-                    let triggers = match triggers_generated::size_prefixed_root_as_trigger_packet(
-                        &packet.buffer,
-                    ) {
-                        Ok(result) => match result.elements() {
-                            Some(result) => result,
-                            None => {
+                    let triggers =
+                        match aedat_core::triggers_generated::size_prefixed_root_as_trigger_packet(
+                            &packet.buffer,
+                        ) {
+                            Ok(result) => match result.elements() {
+                                Some(result) => result,
+                                None => {
+                                    return Err(pyo3::PyErr::from(aedat_core::ParseError::new(
+                                        "empty events packet",
+                                    )))
+                                }
+                            },
+                            Err(_) => {
                                 return Err(pyo3::PyErr::from(aedat_core::ParseError::new(
-                                    "empty events packet",
+                                    "the packet does not have a size prefix",
                                 )))
                             }
-                        },
-                        Err(_) => {
-                            return Err(pyo3::PyErr::from(aedat_core::ParseError::new(
-                                "the packet does not have a size prefix",
-                            )))
-                        }
-                    };
+                        };
                     let mut length = triggers.len() as numpy::npyffi::npy_intp;
                     python_packet.set_item("triggers", unsafe {
                         let dtype_as_list = pyo3::ffi::PyList_New(2_isize);
@@ -471,22 +466,22 @@ impl Decoder {
                             ) as *mut u8;
                             *(trigger_cell.offset(0) as *mut u64) = trigger.t() as u64;
                             *(trigger_cell.offset(8) as *mut u8) = match trigger.source() {
-                                triggers_generated::TriggerSource::TimestampReset => 0_u8,
-                                triggers_generated::TriggerSource::ExternalSignalRisingEdge => 1_u8,
-                                triggers_generated::TriggerSource::ExternalSignalFallingEdge => {
+                                aedat_core::triggers_generated::TriggerSource::TimestampReset => 0_u8,
+                                aedat_core::triggers_generated::TriggerSource::ExternalSignalRisingEdge => 1_u8,
+                                aedat_core::triggers_generated::TriggerSource::ExternalSignalFallingEdge => {
                                     2_u8
                                 }
-                                triggers_generated::TriggerSource::ExternalSignalPulse => 3_u8,
-                                triggers_generated::TriggerSource::ExternalGeneratorRisingEdge => {
+                                aedat_core::triggers_generated::TriggerSource::ExternalSignalPulse => 3_u8,
+                                aedat_core::triggers_generated::TriggerSource::ExternalGeneratorRisingEdge => {
                                     4_u8
                                 }
-                                triggers_generated::TriggerSource::ExternalGeneratorFallingEdge => {
+                                aedat_core::triggers_generated::TriggerSource::ExternalGeneratorFallingEdge => {
                                     5_u8
                                 }
-                                triggers_generated::TriggerSource::FrameBegin => 6_u8,
-                                triggers_generated::TriggerSource::FrameEnd => 7_u8,
-                                triggers_generated::TriggerSource::ExposureBegin => 8_u8,
-                                triggers_generated::TriggerSource::ExposureEnd => 9_u8,
+                                aedat_core::triggers_generated::TriggerSource::FrameBegin => 6_u8,
+                                aedat_core::triggers_generated::TriggerSource::FrameEnd => 7_u8,
+                                aedat_core::triggers_generated::TriggerSource::ExposureBegin => 8_u8,
+                                aedat_core::triggers_generated::TriggerSource::ExposureEnd => 9_u8,
                                 _ => {
                                     return Err(pyo3::PyErr::from(aedat_core::ParseError::new(
                                         "unknown trigger source",
@@ -504,7 +499,7 @@ impl Decoder {
     }
 }
 
- unsafe fn set_dtype_as_list_field(
+unsafe fn set_dtype_as_list_field(
     python: pyo3::Python,
     list: *mut pyo3::ffi::PyObject,
     index: i32,

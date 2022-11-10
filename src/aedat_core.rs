@@ -1,24 +1,59 @@
 use std::io::Read;
 
-#[allow(dead_code, unused_imports)]
+#[allow(
+    dead_code,
+    unused_imports,
+    clippy::derivable_impls,
+    clippy::derive_partial_eq_without_eq,
+    clippy::extra_unused_lifetimes,
+    clippy::size_of_in_element_count
+)]
 #[path = "./ioheader_generated.rs"]
-mod ioheader_generated;
+pub(crate) mod ioheader_generated;
 
-#[allow(dead_code, unused_imports)]
+#[allow(
+    dead_code,
+    unused_imports,
+    clippy::derivable_impls,
+    clippy::derive_partial_eq_without_eq,
+    clippy::extra_unused_lifetimes,
+    clippy::size_of_in_element_count
+)]
 #[path = "./events_generated.rs"]
-mod events_generated;
+pub(crate) mod events_generated;
 
-#[allow(dead_code, unused_imports)]
+#[allow(
+    dead_code,
+    unused_imports,
+    clippy::derivable_impls,
+    clippy::derive_partial_eq_without_eq,
+    clippy::extra_unused_lifetimes,
+    clippy::size_of_in_element_count
+)]
 #[path = "./frame_generated.rs"]
-mod frame_generated;
+pub(crate) mod frame_generated;
 
-#[allow(dead_code, unused_imports)]
+#[allow(
+    dead_code,
+    unused_imports,
+    clippy::derivable_impls,
+    clippy::derive_partial_eq_without_eq,
+    clippy::extra_unused_lifetimes,
+    clippy::size_of_in_element_count
+)]
 #[path = "./imus_generated.rs"]
-mod imus_generated;
+pub(crate) mod imus_generated;
 
-#[allow(dead_code, unused_imports)]
+#[allow(
+    dead_code,
+    unused_imports,
+    clippy::derivable_impls,
+    clippy::derive_partial_eq_without_eq,
+    clippy::extra_unused_lifetimes,
+    clippy::size_of_in_element_count
+)]
 #[path = "./triggers_generated.rs"]
-mod triggers_generated;
+pub(crate) mod triggers_generated;
 
 const MAGIC_NUMBER: &str = "#!AER-DAT4.0\r\n";
 
