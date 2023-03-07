@@ -1,8 +1,7 @@
 use std::fs::File;
-use std::io::Read;
+use std::io::{Read};
 use std::net::{TcpStream, ToSocketAddrs};
 use std::os::unix::net::UnixStream;
-use crate::base::ioheader_generated::Compression;
 use num_derive::FromPrimitive;
 
 #[allow(dead_code, unused_imports)]
@@ -164,167 +163,155 @@ impl Decoder {
             }
             decoder.position += MAGIC_NUMBER.len() as i64;
         }
-        let length = {
-            let mut bytes = [0; 4];
-            decoder.file.read_exact(&mut bytes)?;
-            u32::from_le_bytes(bytes)
-        };
-        decoder.position += 4i64 + length as i64;
-        {
-            let mut buffer = std::vec![0; length as usize];
-            decoder.file.read_exact(&mut buffer)?;
-            let ioheader = unsafe { ioheader_generated::root_as_ioheader_unchecked(&buffer) };
-            decoder.compression = ioheader.compression();
-            decoder.file_data_position = ioheader.file_data_position();
-            let description = match ioheader.description() {
-                Some(content) => content,
-                None => return Err(ParseError::new("the description is empty")),
-            };
-            let document = roxmltree::Document::parse(description)?;
-            let dv_node = match document.root().first_child() {
-                Some(content) => content,
-                None => return Err(ParseError::new("the description has no dv node")),
-            };
-            if !dv_node.has_tag_name("dv") {
-                return Err(ParseError::new("unexpected dv node tag"));
-            }
-            let output_node = match dv_node.children().find(|node| {
-                node.is_element()
-                    && node.has_tag_name("node")
-                    && node.attribute("name") == Some("outInfo")
-            }) {
-                Some(content) => content,
-                None => return Err(ParseError::new("the description has no output node")),
-            };
-            for stream_node in output_node.children() {
-                if stream_node.is_element() && stream_node.has_tag_name("node") {
-                    if !stream_node.has_tag_name("node") {
-                        return Err(ParseError::new("unexpected stream node tag"));
-                    }
-                    let stream_id = match stream_node.attribute("name") {
-                        Some(content) => content,
-                        None => return Err(ParseError::new("missing stream node id")),
-                    }
-                        .parse::<u32>()?;
-                    let identifier = match stream_node.children().find(|node| {
-                        node.is_element()
-                            && node.has_tag_name("attr")
-                            && node.attribute("key") == Some("typeIdentifier")
-                    }) {
-                        Some(content) => match content.text() {
-                            Some(content) => content,
-                            None => {
-                                return Err(ParseError::new("empty stream node type identifier"))
-                            }
-                        },
-                        None => return Err(ParseError::new("missing stream node type identifier")),
-                    }
-                        .to_string();
-                    let mut width = 0u16;
-                    let mut height = 0u16;
-                    if identifier == "EVTS" || identifier == "FRME" {
-                        let info_node = match stream_node.children().find(|node| {
-                            node.is_element()
-                                && node.has_tag_name("node")
-                                && node.attribute("name") == Some("info")
-                        }) {
-                            Some(content) => content,
-                            None => return Err(ParseError::new("missing info node")),
-                        };
-                        width = match info_node.children().find(|node| {
-                            node.is_element()
-                                && node.has_tag_name("attr")
-                                && node.attribute("key") == Some("sizeX")
-                        }) {
-                            Some(content) => match content.text() {
-                                Some(content) => content,
-                                None => return Err(ParseError::new("empty sizeX attribute")),
-                            },
-                            None => return Err(ParseError::new("missing sizeX attribute")),
-                        }
-                            .parse::<u16>()?;
-                        height = match info_node.children().find(|node| {
-                            node.is_element()
-                                && node.has_tag_name("attr")
-                                && node.attribute("key") == Some("sizeY")
-                        }) {
-                            Some(content) => match content.text() {
-                                Some(content) => content,
-                                None => return Err(ParseError::new("empty sizeX attribute")),
-                            },
-                            None => return Err(ParseError::new("missing sizeX attribute")),
-                        }
-                            .parse::<u16>()?;
-                    }
-                    if decoder
-                        .id_to_stream
-                        .insert(
-                            stream_id,
-                            Stream {
-                                content: StreamContent::from(&identifier)?,
-                                width,
-                                height,
-                            },
-                        )
-                        .is_some()
-                    {
-                        return Err(ParseError::new("duplicated stream id"));
-                    }
-                }
-            }
-        }
-        if decoder.id_to_stream.is_empty() {
-            return Err(ParseError::new("no stream found in the description"));
-        }
+        decoder = read_io_header(decoder)?;
+
         Ok(decoder)
     }
 
+
     pub fn new_from_unix_stream<P: std::convert::AsRef<std::path::Path> + Clone>(
-        path: P, content: StreamContent, compression: Compression, width: u16, height: u16) -> Result<Self, ParseError> {
-        let decoder = Decoder {
+        path: P) -> Result<Self, ParseError> {
+        let mut decoder = Decoder {
             id_to_stream: std::collections::HashMap::new(),
             file: Box::new(UnixStream::connect(path)?),
             position: 0i64,
             file_data_position: -1,
-            compression,
+            compression: ioheader_generated::Compression::None,
         };
-        setup_for_socket(decoder, content, width, height)
+        decoder = read_io_header(decoder)?;
+        Ok(decoder)
     }
 
     pub fn new_from_tcp_stream<P: ToSocketAddrs + Clone>(
         path: P,
-        content: StreamContent,
-        compression: Compression,
-        width: u16,
-        height: u16
     ) -> Result<Self, ParseError> {
-        let decoder = Decoder {
+        let mut decoder = Decoder {
             id_to_stream: std::collections::HashMap::new(),
             file: Box::new(TcpStream::connect(path)?),
             position: 0i64,
             file_data_position: -1,
-            compression,
+            compression: ioheader_generated::Compression::None,
         };
-        setup_for_socket(decoder, content, width, height)
+        decoder = read_io_header(decoder)?;
+        Ok(decoder)
     }
 }
 
-fn setup_for_socket(mut decoder: Decoder, content: StreamContent, width: u16, height: u16) -> Result<Decoder, ParseError>{
-    if decoder
-        .id_to_stream
-        .insert(
-            0,
-            Stream {
-                content,
-                width,
-                height,
-            },
-        )
-        .is_some()
+fn read_io_header(mut decoder: Decoder) -> Result<Decoder, ParseError> {
+    let length = {
+        let mut bytes = [0; 4];
+        decoder.file.read_exact(&mut bytes)?;
+        u32::from_le_bytes(bytes)
+    };
+    decoder.position += 4i64 + length as i64;
     {
-        return Err(ParseError::new("duplicated stream id"));
+        let mut buffer = std::vec![0; length as usize];
+        decoder.file.read_exact(&mut buffer)?;
+        let ioheader = unsafe { ioheader_generated::root_as_ioheader_unchecked(&buffer) };
+        decoder.compression = ioheader.compression();
+        decoder.file_data_position = ioheader.file_data_position();
+        let description = match ioheader.description() {
+            Some(content) => content,
+            None => return Err(ParseError::new("the description is empty")),
+        };
+        let document = roxmltree::Document::parse(description)?;
+        let dv_node = match document.root().first_child() {
+            Some(content) => content,
+            None => return Err(ParseError::new("the description has no dv node")),
+        };
+        if !dv_node.has_tag_name("dv") {
+            return Err(ParseError::new("unexpected dv node tag"));
+        }
+        let output_node = match dv_node.children().find(|node| {
+            node.is_element()
+                && node.has_tag_name("node")
+                && node.attribute("name") == Some("outInfo")
+        }) {
+            Some(content) => content,
+            None => return Err(ParseError::new("the description has no output node")),
+        };
+        for stream_node in output_node.children() {
+            if stream_node.is_element() && stream_node.has_tag_name("node") {
+                if !stream_node.has_tag_name("node") {
+                    return Err(ParseError::new("unexpected stream node tag"));
+                }
+                let stream_id = match stream_node.attribute("name") {
+                    Some(content) => content,
+                    None => return Err(ParseError::new("missing stream node id")),
+                }
+                    .parse::<u32>()?;
+                let identifier = match stream_node.children().find(|node| {
+                    node.is_element()
+                        && node.has_tag_name("attr")
+                        && node.attribute("key") == Some("typeIdentifier")
+                }) {
+                    Some(content) => match content.text() {
+                        Some(content) => content,
+                        None => {
+                            return Err(ParseError::new("empty stream node type identifier"))
+                        }
+                    },
+                    None => return Err(ParseError::new("missing stream node type identifier")),
+                }
+                    .to_string();
+                let mut width = 0u16;
+                let mut height = 0u16;
+                if identifier == "EVTS" || identifier == "FRME" {
+                    let info_node = match stream_node.children().find(|node| {
+                        node.is_element()
+                            && node.has_tag_name("node")
+                            && node.attribute("name") == Some("info")
+                    }) {
+                        Some(content) => content,
+                        None => return Err(ParseError::new("missing info node")),
+                    };
+                    width = match info_node.children().find(|node| {
+                        node.is_element()
+                            && node.has_tag_name("attr")
+                            && node.attribute("key") == Some("sizeX")
+                    }) {
+                        Some(content) => match content.text() {
+                            Some(content) => content,
+                            None => return Err(ParseError::new("empty sizeX attribute")),
+                        },
+                        None => return Err(ParseError::new("missing sizeX attribute")),
+                    }
+                        .parse::<u16>()?;
+                    height = match info_node.children().find(|node| {
+                        node.is_element()
+                            && node.has_tag_name("attr")
+                            && node.attribute("key") == Some("sizeY")
+                    }) {
+                        Some(content) => match content.text() {
+                            Some(content) => content,
+                            None => return Err(ParseError::new("empty sizeX attribute")),
+                        },
+                        None => return Err(ParseError::new("missing sizeX attribute")),
+                    }
+                        .parse::<u16>()?;
+                }
+                if decoder
+                    .id_to_stream
+                    .insert(
+                        stream_id,
+                        Stream {
+                            content: StreamContent::from(&identifier)?,
+                            width,
+                            height,
+                        },
+                    )
+                    .is_some()
+                {
+                    return Err(ParseError::new("duplicated stream id"));
+                }
+            }
+        }
+    }
+    if decoder.id_to_stream.is_empty() {
+        return Err(ParseError::new("no stream found in the description"));
     }
     Ok(decoder)
+
 }
 
 #[derive(Debug, Clone)]
