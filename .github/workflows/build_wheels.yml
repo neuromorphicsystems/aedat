@@ -41,15 +41,15 @@ jobs:
         python: ["3.8", "3.9", "3.10", "3.11", "3.12"]
         os: [ubuntu-latest, macos-latest, windows-latest]
     steps:
-    - uses: actions/setup-python@v4
-      with:
-        python-version: ${{ matrix.python }}
-    - uses: actions/download-artifact@v3
-      with:
-        name: wheelhouse
-        path: wheelhouse
-    - run: python -m pip install --find-links wheelhouse aedat
-    - run: python -c 'import aedat'
+      - uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python }}
+      - uses: actions/download-artifact@v3
+        with:
+          name: wheelhouse
+          path: wheelhouse
+      - run: python -m pip install --find-links wheelhouse aedat
+      - run: python -c 'import aedat'
   build_sdist:
     name: Build source distribution
     runs-on: ubuntu-latest
@@ -75,6 +75,6 @@ jobs:
           name: dist
           path: dist
       - run: mv wheelhouse/* dist/
-      - uses: pypa/gh-action-pypi-publish@v1.5.0
+      - uses: pypa/gh-action-pypi-publish@v1.8.10
         with:
           password: ${{ secrets.PYPI_API_TOKEN }}
