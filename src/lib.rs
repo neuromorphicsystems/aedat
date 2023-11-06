@@ -163,9 +163,9 @@ impl Decoder {
                             *(event_cell.offset(0) as *mut u64) = event.t() as u64;
                             *(event_cell.offset(8) as *mut u16) = event.x() as u16;
                             *(event_cell.offset(10) as *mut u16) = event.y() as u16;
-                            *(event_cell.offset(12) as *mut u8) = u8::from(event.on());
+                            *event_cell.offset(12) = u8::from(event.on());
                         }
-                        PyObject::from_owned_ptr(python, array as *mut pyo3::ffi::PyObject)
+                        PyObject::from_owned_ptr(python, array)
                     })?;
                 }
                 aedat_core::StreamContent::Frame => {
@@ -395,7 +395,7 @@ impl Decoder {
                             *(imu_cell.offset(44) as *mut f32) = imu.magnetometer_z();
                             index += 1_isize;
                         }
-                        PyObject::from_owned_ptr(python, array as *mut pyo3::ffi::PyObject)
+                        PyObject::from_owned_ptr(python, array)
                     })?;
                 }
                 aedat_core::StreamContent::Triggers => {
@@ -465,7 +465,7 @@ impl Decoder {
                                 &mut index as *mut numpy::npyffi::npy_intp,
                             ) as *mut u8;
                             *(trigger_cell.offset(0) as *mut u64) = trigger.t() as u64;
-                            *(trigger_cell.offset(8) as *mut u8) = match trigger.source() {
+                            *trigger_cell.offset(8) = match trigger.source() {
                                 aedat_core::triggers_generated::TriggerSource::TimestampReset => 0_u8,
                                 aedat_core::triggers_generated::TriggerSource::ExternalSignalRisingEdge => 1_u8,
                                 aedat_core::triggers_generated::TriggerSource::ExternalSignalFallingEdge => {
@@ -490,7 +490,7 @@ impl Decoder {
                             };
                             index += 1_isize;
                         }
-                        PyObject::from_owned_ptr(python, array as *mut pyo3::ffi::PyObject)
+                        PyObject::from_owned_ptr(python, array)
                     })?;
                 }
             }

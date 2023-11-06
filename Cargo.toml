@@ -1,13 +1,6 @@
 [package]
 name = "aedat"
 version = "2.0.3"
-authors = ["International Centre for Neuromorphic Systems", "Alexandre Marcireau"]
-description = "A fast AEDAT4 decoder with an underlying Rust implementation"
-homepage = "https://github.com/neuromorphicsystems/aedat/"
-documentation = "https://github.com/neuromorphicsystems/aedat/"
-repository = "https://github.com/neuromorphicsystems/aedat/"
-readme = "README.md"
-license-file = "LICENSE"
 edition = "2021"
 
 [profile.release]
@@ -25,7 +18,3 @@ numpy = "0.17.2"
 pyo3 = {version = "0.17.3", features = ["extension-module"]}
 roxmltree = "0.15.1"
 zstd = "0.11.2"
-
-[package.metadata.maturin]
-requires-dist = ["numpy>=1"]
-requires-python = ">=3.8"

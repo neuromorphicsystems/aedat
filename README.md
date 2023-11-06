@@ -191,51 +191,22 @@ decoder = None
 
 ## Install from source
 
-This library requires [Python 3.x](https://www.python.org), x >= 5, and [NumPy](https://numpy.org). This guide assumes that they are installed on your machine.
-
-Note for Windows users: this library requires the x86-64 version of Python. You can download it here: https://www.python.org/downloads/windows/ (the default installer contains the x86 version).
-
-A Rust compiling toolchain is required during the installation (but can be removed afterwards).
-
-### Linux
+Local build (first run).
 
 ```sh
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-git clone https://github.com/neuromorphicsystems/aedat.git
-cd aedat
-cargo build --release
-cp target/release/libaedat.so aedat.so
+python3 -m venv .venv
+source .venv/bin/activate
+pip install --upgrade pip
+pip install maturin numpy
+maturin develop  # or maturin develop --release to build with optimizations
 ```
 
-You can `import aedat` from python scripts in the same directory as _aedat.so_, which can be placed in any directory.
-
-### macOS
+Local build (subsequent runs).
 
 ```sh
-brew install rustup
-rustup-init
-git clone https://github.com/neuromorphicsystems/aedat.git
-cd aedat
-cargo build --release
-cp target/release/libaedat.dylib aedat.so
+source .venv/bin/activate
+maturin develop  # or maturin develop --release to build with optimizations
 ```
-
-You can `import aedat` from python scripts in the same directory as _aedat.so_, which can be placed in any directory.
-
-### Windows
-
-1. install rustup (instructions availables at https://www.rust-lang.org/tools/install)
-2. clone or download this repository
-3. run in PowerShell from the _aedat_ directory:
-
-```sh
-cargo build --release
-copy .\target\release\aedat.dll .\aedat.pyd
-```
-
-You can `import aedat` from python scripts in the same directory as _aedat.pyd_, which can be placed in any directory.
-
-## Contribute
 
 After changing any of the files in _framebuffers_, one must run:
 
@@ -249,14 +220,8 @@ To format the code, run:
 cargo fmt
 ```
 
-You may need to install rustfmt first with:
-
-```sh
-rustup component add rustfmt
-```
-
 # Publish
 
-1. Bump the version number in _setup.py_.
+1. Bump the version number in _Cargo.toml_ and _pyproject.toml_.
 
 2. Create a new release on GitHub.
