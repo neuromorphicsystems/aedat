@@ -23,7 +23,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
-      - run: rustup target add aarch64-apple-darwin
+      - run: rustup target add aarch64-apple-darwin x86_64-apple-darwin
         if: startsWith(matrix.os, 'macos')
       - run: rustup target add i686-pc-windows-msvc
         if: startsWith(matrix.os, 'windows')
