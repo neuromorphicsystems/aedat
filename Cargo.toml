@@ -4,9 +4,6 @@ version = "2.1.0"
 edition = "2021"
 resolver = "2"
 
-[profile.release]
-lto = true
-
 [lib]
 name = "aedat"
 crate-type = ["cdylib"]
@@ -19,3 +16,7 @@ numpy = "0.21.0"
 pyo3 = {version = "0.21.2", features = ["extension-module"]}
 roxmltree = "0.20.0"
 zstd = "0.13.1"
+
+[profile.release]
+lto = true
+codegen-units = 1
