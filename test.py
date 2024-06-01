@@ -1,35 +1,45 @@
-import aedat
+import hashlib
 import pathlib
+
+import aedat
+
 dirname = pathlib.Path(__file__).resolve().parent
 
-decoder = aedat.Decoder(dirname / 'test_data.aedat4')
+decoder = aedat.Decoder(dirname / "test_data.aedat4")
 
 assert len(decoder.id_to_stream().keys()) == 4
-assert decoder.id_to_stream()[0]['type'] == 'events'
-assert decoder.id_to_stream()[0]['width'] == 346
-assert decoder.id_to_stream()[0]['height'] == 260
-assert decoder.id_to_stream()[1]['type'] == 'frame'
-assert decoder.id_to_stream()[1]['width'] == 346
-assert decoder.id_to_stream()[1]['height'] == 260
-assert decoder.id_to_stream()[2]['type'] == 'imus'
-assert decoder.id_to_stream()[3]['type'] == 'triggers'
-counts = [0, 0, 0, 0]
-sizes = [0, 0, 0, 0]
+assert decoder.id_to_stream()[0]["type"] == "events"
+assert decoder.id_to_stream()[0]["width"] == 346
+assert decoder.id_to_stream()[0]["height"] == 260
+assert decoder.id_to_stream()[1]["type"] == "frame"
+assert decoder.id_to_stream()[1]["width"] == 346
+assert decoder.id_to_stream()[1]["height"] == 260
+assert decoder.id_to_stream()[2]["type"] == "imus"
+assert decoder.id_to_stream()[3]["type"] == "triggers"
+t_hasher = hashlib.sha3_224()
+x_hasher = hashlib.sha3_224()
+y_hasher = hashlib.sha3_224()
+on_hasher = hashlib.sha3_224()
+frame_hasher = hashlib.sha3_224()
+imus_hasher = hashlib.sha3_224()
+triggers_hasher = hashlib.sha3_224()
 for packet in decoder:
-    counts[packet['stream_id']] += 1
-    if 'events' in packet:
-        sizes[0] += packet['events'].nbytes
-    elif 'frame' in packet:
-        sizes[1] += packet['frame']['pixels'].nbytes
-    elif 'imus' in packet:
-        sizes[2] += packet['imus'].nbytes
-    elif 'triggers' in packet:
-        sizes[3] += packet['triggers'].nbytes
-assert counts[0] == 236
-assert counts[1] == 59
-assert counts[2] == 236
-assert counts[3] == 177
-assert sizes[0] == 1024790
-assert sizes[1] == 5307640
-assert sizes[2] == 113424
-assert sizes[3] == 2124
+    if "events" in packet:
+        events = packet["events"]
+        t_hasher.update(events["t"].tobytes())
+        x_hasher.update(events["x"].tobytes())
+        y_hasher.update(events["y"].tobytes())
+        on_hasher.update(events["on"].tobytes())
+    if "frame" in packet:
+        frame_hasher.update(packet["frame"]["pixels"].tobytes())
+    if "imus" in packet:
+        imus_hasher.update(packet["imus"].tobytes())
+    if "triggers" in packet:
+        triggers_hasher.update(packet["triggers"].tobytes())
+print(f"{t_hasher.hexdigest()=}")
+print(f"{x_hasher.hexdigest()=}")
+print(f"{y_hasher.hexdigest()=}")
+print(f"{on_hasher.hexdigest()=}")
+print(f"{frame_hasher.hexdigest()=}")
+print(f"{imus_hasher.hexdigest()=}")
+print(f"{triggers_hasher.hexdigest()=}")

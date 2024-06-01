@@ -1,11 +1,10 @@
-extern crate ndarray;
-use ndarray::IntoDimension;
-extern crate numpy;
-use numpy::convert::ToPyArray;
-use numpy::Element;
-extern crate pyo3;
-use pyo3::prelude::*;
 mod aedat_core;
+
+use ndarray::IntoDimension;
+use numpy::convert::ToPyArray;
+use numpy::prelude::*;
+use numpy::Element;
+use pyo3::prelude::*;
 
 impl std::convert::From<aedat_core::ParseError> for pyo3::PyErr {
     fn from(error: aedat_core::ParseError) -> Self {
@@ -21,7 +20,7 @@ struct Decoder {
 #[pymethods]
 impl Decoder {
     #[new]
-    fn new(path: &pyo3::types::PyAny) -> Result<Self, pyo3::PyErr> {
+    fn new(path: &pyo3::Bound<'_, pyo3::types::PyAny>) -> Result<Self, pyo3::PyErr> {
         pyo3::Python::with_gil(|python| -> Result<Self, pyo3::PyErr> {
             match python_path_to_string(python, path) {
                 Ok(result) => match aedat_core::Decoder::new(result) {
@@ -34,9 +33,9 @@ impl Decoder {
     }
 
     fn id_to_stream(&self, python: pyo3::prelude::Python) -> PyResult<PyObject> {
-        let python_id_to_stream = pyo3::types::PyDict::new(python);
+        let python_id_to_stream = pyo3::types::PyDict::new_bound(python);
         for (id, stream) in self.decoder.id_to_stream.iter() {
-            let python_stream = pyo3::types::PyDict::new(python);
+            let python_stream = pyo3::types::PyDict::new_bound(python);
             match stream.content {
                 aedat_core::StreamContent::Events => {
                     python_stream.set_item("type", "events")?;
@@ -71,7 +70,7 @@ impl Decoder {
             None => return Ok(None),
         };
         pyo3::Python::with_gil(|python| -> PyResult<Option<PyObject>> {
-            let python_packet = pyo3::types::PyDict::new(python);
+            let python_packet = pyo3::types::PyDict::new_bound(python);
             python_packet.set_item("stream_id", packet.stream_id)?;
             match shell
                 .decoder
@@ -107,28 +106,32 @@ impl Decoder {
                             dtype_as_list,
                             0,
                             "t",
-                            u64::get_dtype(python).num(),
+                            None,
+                            u64::get_dtype_bound(python).num(),
                         );
                         set_dtype_as_list_field(
                             python,
                             dtype_as_list,
                             1,
                             "x",
-                            u16::get_dtype(python).num(),
+                            None,
+                            u16::get_dtype_bound(python).num(),
                         );
                         set_dtype_as_list_field(
                             python,
                             dtype_as_list,
                             2,
                             "y",
-                            u16::get_dtype(python).num(),
+                            None,
+                            u16::get_dtype_bound(python).num(),
                         );
                         set_dtype_as_list_field(
                             python,
                             dtype_as_list,
                             3,
                             "on",
-                            bool::get_dtype(python).num(),
+                            Some("p"),
+                            bool::get_dtype_bound(python).num(),
                         );
                         let mut dtype: *mut numpy::npyffi::PyArray_Descr = std::ptr::null_mut();
                         if numpy::PY_ARRAY_API.PyArray_DescrConverter(
@@ -160,10 +163,12 @@ impl Decoder {
                                 &mut index as *mut numpy::npyffi::npy_intp,
                             ) as *mut u8;
                             let event = events.get(index as usize);
-                            *(event_cell.offset(0) as *mut u64) = event.t() as u64;
-                            *(event_cell.offset(8) as *mut u16) = event.x() as u16;
-                            *(event_cell.offset(10) as *mut u16) = event.y() as u16;
-                            *event_cell.offset(12) = u8::from(event.on());
+                            let mut event_array = [0u8; 13];
+                            event_array[0..8].copy_from_slice(&(event.t() as u64).to_ne_bytes());
+                            event_array[8..10].copy_from_slice(&(event.x() as u16).to_ne_bytes());
+                            event_array[10..12].copy_from_slice(&(event.y() as u16).to_ne_bytes());
+                            event_array[12] = if event.on() { 1 } else { 0 };
+                            std::ptr::copy(event_array.as_ptr(), event_cell, event_array.len());
                         }
                         PyObject::from_owned_ptr(python, array)
                     })?;
@@ -179,7 +184,7 @@ impl Decoder {
                             )))
                         }
                     };
-                    let python_frame = pyo3::types::PyDict::new(python);
+                    let python_frame = pyo3::types::PyDict::new_bound(python);
                     python_frame.set_item("t", frame.t())?;
                     python_frame.set_item("begin_t", frame.begin_t())?;
                     python_frame.set_item("end_t", frame.end_t())?;
@@ -209,10 +214,11 @@ impl Decoder {
                             python_frame.set_item(
                                 "pixels",
                                 match frame.pixels() {
-                                    Some(result) => {
-                                        result.bytes().to_pyarray(python).reshape(dimensions)?
-                                    }
-                                    None => numpy::array::PyArray2::<u8>::zeros(
+                                    Some(result) => result
+                                        .bytes()
+                                        .to_pyarray_bound(python)
+                                        .reshape(dimensions)?,
+                                    None => numpy::array::PyArray2::<u8>::zeros_bound(
                                         python, dimensions, false,
                                     ),
                                 },
@@ -238,9 +244,9 @@ impl Decoder {
                                         for index in 0..(pixels.len() / channels) {
                                             pixels.swap(index * channels, index * channels + 2);
                                         }
-                                        pixels.to_pyarray(python).reshape(dimensions)?
+                                        pixels.to_pyarray_bound(python).reshape(dimensions)?
                                     }
-                                    None => numpy::array::PyArray3::<u8>::zeros(
+                                    None => numpy::array::PyArray3::<u8>::zeros_bound(
                                         python, dimensions, false,
                                     ),
                                 },
@@ -280,77 +286,88 @@ impl Decoder {
                             dtype_as_list,
                             0,
                             "t",
-                            u64::get_dtype(python).num(),
+                            None,
+                            u64::get_dtype_bound(python).num(),
                         );
                         set_dtype_as_list_field(
                             python,
                             dtype_as_list,
                             1,
                             "temperature",
-                            f32::get_dtype(python).num(),
+                            None,
+                            f32::get_dtype_bound(python).num(),
                         );
                         set_dtype_as_list_field(
                             python,
                             dtype_as_list,
                             2,
                             "accelerometer_x",
-                            f32::get_dtype(python).num(),
+                            None,
+                            f32::get_dtype_bound(python).num(),
                         );
                         set_dtype_as_list_field(
                             python,
                             dtype_as_list,
                             3,
                             "accelerometer_y",
-                            f32::get_dtype(python).num(),
+                            None,
+                            f32::get_dtype_bound(python).num(),
                         );
                         set_dtype_as_list_field(
                             python,
                             dtype_as_list,
                             4,
                             "accelerometer_z",
-                            f32::get_dtype(python).num(),
+                            None,
+                            f32::get_dtype_bound(python).num(),
                         );
                         set_dtype_as_list_field(
                             python,
                             dtype_as_list,
                             5,
                             "gyroscope_x",
-                            f32::get_dtype(python).num(),
+                            None,
+                            f32::get_dtype_bound(python).num(),
                         );
                         set_dtype_as_list_field(
                             python,
                             dtype_as_list,
                             6,
                             "gyroscope_y",
-                            f32::get_dtype(python).num(),
+                            None,
+                            f32::get_dtype_bound(python).num(),
                         );
                         set_dtype_as_list_field(
                             python,
                             dtype_as_list,
                             7,
                             "gyroscope_z",
-                            f32::get_dtype(python).num(),
+                            None,
+                            f32::get_dtype_bound(python).num(),
                         );
                         set_dtype_as_list_field(
                             python,
                             dtype_as_list,
                             8,
                             "magnetometer_x",
-                            f32::get_dtype(python).num(),
+                            None,
+                            f32::get_dtype_bound(python).num(),
                         );
                         set_dtype_as_list_field(
                             python,
                             dtype_as_list,
                             9,
                             "magnetometer_y",
-                            f32::get_dtype(python).num(),
+                            None,
+                            f32::get_dtype_bound(python).num(),
                         );
                         set_dtype_as_list_field(
                             python,
                             dtype_as_list,
                             10,
                             "magnetometer_z",
-                            f32::get_dtype(python).num(),
+                            None,
+                            f32::get_dtype_bound(python).num(),
                         );
                         let mut dtype: *mut numpy::npyffi::PyArray_Descr = std::ptr::null_mut();
                         if numpy::PY_ARRAY_API.PyArray_DescrConverter(
@@ -382,17 +399,25 @@ impl Decoder {
                                 array as *mut numpy::npyffi::PyArrayObject,
                                 &mut index as *mut numpy::npyffi::npy_intp,
                             ) as *mut u8;
-                            *(imu_cell.offset(0) as *mut u64) = imu.t() as u64;
-                            *(imu_cell.offset(8) as *mut f32) = imu.temperature();
-                            *(imu_cell.offset(12) as *mut f32) = imu.accelerometer_x();
-                            *(imu_cell.offset(16) as *mut f32) = imu.accelerometer_y();
-                            *(imu_cell.offset(20) as *mut f32) = imu.accelerometer_z();
-                            *(imu_cell.offset(24) as *mut f32) = imu.gyroscope_x();
-                            *(imu_cell.offset(28) as *mut f32) = imu.gyroscope_y();
-                            *(imu_cell.offset(32) as *mut f32) = imu.gyroscope_z();
-                            *(imu_cell.offset(36) as *mut f32) = imu.magnetometer_x();
-                            *(imu_cell.offset(40) as *mut f32) = imu.magnetometer_y();
-                            *(imu_cell.offset(44) as *mut f32) = imu.magnetometer_z();
+                            let mut imu_array = [0u8; 48];
+                            imu_array[0..8].copy_from_slice(&(imu.t() as u64).to_ne_bytes());
+                            imu_array[8..12].copy_from_slice(&(imu.temperature()).to_ne_bytes());
+                            imu_array[12..16]
+                                .copy_from_slice(&(imu.accelerometer_x()).to_ne_bytes());
+                            imu_array[16..20]
+                                .copy_from_slice(&(imu.accelerometer_y()).to_ne_bytes());
+                            imu_array[20..24]
+                                .copy_from_slice(&(imu.accelerometer_z()).to_ne_bytes());
+                            imu_array[24..28].copy_from_slice(&(imu.gyroscope_x()).to_ne_bytes());
+                            imu_array[28..32].copy_from_slice(&(imu.gyroscope_y()).to_ne_bytes());
+                            imu_array[32..36].copy_from_slice(&(imu.gyroscope_z()).to_ne_bytes());
+                            imu_array[36..40]
+                                .copy_from_slice(&(imu.magnetometer_x()).to_ne_bytes());
+                            imu_array[40..44]
+                                .copy_from_slice(&(imu.magnetometer_y()).to_ne_bytes());
+                            imu_array[44..48]
+                                .copy_from_slice(&(imu.magnetometer_z()).to_ne_bytes());
+                            std::ptr::copy(imu_array.as_ptr(), imu_cell, imu_array.len());
                             index += 1_isize;
                         }
                         PyObject::from_owned_ptr(python, array)
@@ -425,14 +450,16 @@ impl Decoder {
                             dtype_as_list,
                             0,
                             "t",
-                            u64::get_dtype(python).num(),
+                            None,
+                            u64::get_dtype_bound(python).num(),
                         );
                         set_dtype_as_list_field(
                             python,
                             dtype_as_list,
                             1,
                             "source",
-                            u8::get_dtype(python).num(),
+                            None,
+                            u8::get_dtype_bound(python).num(),
                         );
                         let mut dtype: *mut numpy::npyffi::PyArray_Descr = std::ptr::null_mut();
                         if numpy::PY_ARRAY_API.PyArray_DescrConverter(
@@ -464,30 +491,33 @@ impl Decoder {
                                 array as *mut numpy::npyffi::PyArrayObject,
                                 &mut index as *mut numpy::npyffi::npy_intp,
                             ) as *mut u8;
-                            *(trigger_cell.offset(0) as *mut u64) = trigger.t() as u64;
-                            *trigger_cell.offset(8) = match trigger.source() {
-                                aedat_core::triggers_generated::TriggerSource::TimestampReset => 0_u8,
-                                aedat_core::triggers_generated::TriggerSource::ExternalSignalRisingEdge => 1_u8,
-                                aedat_core::triggers_generated::TriggerSource::ExternalSignalFallingEdge => {
-                                    2_u8
-                                }
-                                aedat_core::triggers_generated::TriggerSource::ExternalSignalPulse => 3_u8,
-                                aedat_core::triggers_generated::TriggerSource::ExternalGeneratorRisingEdge => {
-                                    4_u8
-                                }
-                                aedat_core::triggers_generated::TriggerSource::ExternalGeneratorFallingEdge => {
-                                    5_u8
-                                }
-                                aedat_core::triggers_generated::TriggerSource::FrameBegin => 6_u8,
-                                aedat_core::triggers_generated::TriggerSource::FrameEnd => 7_u8,
-                                aedat_core::triggers_generated::TriggerSource::ExposureBegin => 8_u8,
-                                aedat_core::triggers_generated::TriggerSource::ExposureEnd => 9_u8,
+
+                            let mut trigger_array = [0u8; 9];
+                            trigger_array[0..8]
+                                .copy_from_slice(&(trigger.t() as u64).to_ne_bytes());
+                            use aedat_core::triggers_generated::TriggerSource;
+                            trigger_array[8] = match trigger.source() {
+                                TriggerSource::TimestampReset => 0_u8,
+                                TriggerSource::ExternalSignalRisingEdge => 1_u8,
+                                TriggerSource::ExternalSignalFallingEdge => 2_u8,
+                                TriggerSource::ExternalSignalPulse => 3_u8,
+                                TriggerSource::ExternalGeneratorRisingEdge => 4_u8,
+                                TriggerSource::ExternalGeneratorFallingEdge => 5_u8,
+                                TriggerSource::FrameBegin => 6_u8,
+                                TriggerSource::FrameEnd => 7_u8,
+                                TriggerSource::ExposureBegin => 8_u8,
+                                TriggerSource::ExposureEnd => 9_u8,
                                 _ => {
                                     return Err(pyo3::PyErr::from(aedat_core::ParseError::new(
                                         "unknown trigger source",
                                     )))
                                 }
                             };
+                            std::ptr::copy(
+                                trigger_array.as_ptr(),
+                                trigger_cell,
+                                trigger_array.len(),
+                            );
                             index += 1_isize;
                         }
                         PyObject::from_owned_ptr(python, array)
@@ -504,16 +534,45 @@ unsafe fn set_dtype_as_list_field(
     list: *mut pyo3::ffi::PyObject,
     index: i32,
     name: &str,
+    title: Option<&str>,
     numpy_type: core::ffi::c_int,
 ) {
     let tuple = pyo3::ffi::PyTuple_New(2);
     if pyo3::ffi::PyTuple_SetItem(
         tuple,
         0 as pyo3::ffi::Py_ssize_t,
-        pyo3::ffi::PyUnicode_FromStringAndSize(
-            name.as_ptr() as *const core::ffi::c_char,
-            name.len() as pyo3::ffi::Py_ssize_t,
-        ),
+        match title {
+            Some(title) => {
+                let tuple = pyo3::ffi::PyTuple_New(2);
+                if pyo3::ffi::PyTuple_SetItem(
+                    tuple,
+                    0 as pyo3::ffi::Py_ssize_t,
+                    pyo3::ffi::PyUnicode_FromStringAndSize(
+                        name.as_ptr() as *const core::ffi::c_char,
+                        name.len() as pyo3::ffi::Py_ssize_t,
+                    ),
+                ) < 0
+                {
+                    panic!("PyTuple_SetItem 0 failed");
+                }
+                if pyo3::ffi::PyTuple_SetItem(
+                    tuple,
+                    1 as pyo3::ffi::Py_ssize_t,
+                    pyo3::ffi::PyUnicode_FromStringAndSize(
+                        title.as_ptr() as *const core::ffi::c_char,
+                        title.len() as pyo3::ffi::Py_ssize_t,
+                    ),
+                ) < 0
+                {
+                    panic!("PyTuple_SetItem 1 failed");
+                }
+                tuple
+            }
+            None => pyo3::ffi::PyUnicode_FromStringAndSize(
+                name.as_ptr() as *const core::ffi::c_char,
+                name.len() as pyo3::ffi::Py_ssize_t,
+            ),
+        },
     ) < 0
     {
         panic!("PyTuple_SetItem 0 failed");
@@ -533,7 +592,7 @@ unsafe fn set_dtype_as_list_field(
 
 fn python_path_to_string(
     python: pyo3::prelude::Python,
-    path: &pyo3::types::PyAny,
+    path: &pyo3::Bound<'_, pyo3::types::PyAny>,
 ) -> PyResult<String> {
     if let Ok(result) = path.downcast::<pyo3::types::PyString>() {
         return Ok(result.to_string());
@@ -553,8 +612,10 @@ fn python_path_to_string(
 }
 
 #[pymodule]
-fn aedat(_python: pyo3::prelude::Python, module: &pyo3::prelude::PyModule) -> PyResult<()> {
+fn aedat(
+    _python: pyo3::prelude::Python,
+    module: &pyo3::Bound<'_, pyo3::types::PyModule>,
+) -> PyResult<()> {
     module.add_class::<Decoder>()?;
-
     Ok(())
 }
