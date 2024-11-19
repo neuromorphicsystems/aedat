@@ -5,6 +5,7 @@ use numpy::convert::ToPyArray;
 use numpy::prelude::*;
 use numpy::Element;
 use pyo3::prelude::*;
+use pyo3::types::{PyAny, PyBytes, PyString};
 
 impl std::convert::From<aedat_core::ParseError> for pyo3::PyErr {
     fn from(error: aedat_core::ParseError) -> Self {
@@ -592,23 +593,26 @@ unsafe fn set_dtype_as_list_field(
 
 fn python_path_to_string(
     python: pyo3::prelude::Python,
-    path: &pyo3::Bound<'_, pyo3::types::PyAny>,
+    path: &PyAny,
 ) -> PyResult<String> {
-    if let Ok(result) = path.downcast::<pyo3::types::PyString>() {
-        return Ok(result.to_string());
+    if let Ok(py_string) = path.downcast::<PyString>() {
+        return Ok(py_string.to_str()?.to_string());
     }
-    if let Ok(result) = path.downcast::<pyo3::types::PyBytes>() {
-        return Ok(result.to_string());
+    if let Ok(py_bytes) = path.downcast::<PyBytes>() {
+        return Ok(String::from_utf8(py_bytes.as_bytes().to_vec())
+            .map_err(|e| PyErr::new::<pyo3::exceptions::PyValueError, _>(format!("{}", e)))?);
     }
-    let fspath_result = path.to_object(python).call_method0(python, "__fspath__")?;
-    {
-        let fspath_as_string: PyResult<&pyo3::types::PyString> = fspath_result.extract(python);
-        if let Ok(result) = fspath_as_string {
-            return Ok(result.to_string());
-        }
+    let fspath_result = path.call_method0("__fspath__")?;
+    if let Ok(py_string) = fspath_result.downcast::<PyString>() {
+        return Ok(py_string.to_str()?.to_string());
     }
-    let fspath_as_bytes: &pyo3::types::PyBytes = fspath_result.extract(python)?;
-    Ok(fspath_as_bytes.to_string())
+    if let Ok(py_bytes) = fspath_result.downcast::<PyBytes>() {
+        return Ok(String::from_utf8(py_bytes.as_bytes().to_vec())
+            .map_err(|e| PyErr::new::<pyo3::exceptions::PyValueError, _>(format!("{}", e)))?);
+    }
+    Err(PyErr::new::<pyo3::exceptions::PyTypeError, _>(
+        "Expected a string, bytes, or an object implementing __fspath__",
+    ))
 }
 
 #[pymodule]
