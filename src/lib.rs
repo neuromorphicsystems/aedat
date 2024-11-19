@@ -592,21 +592,25 @@ unsafe fn set_dtype_as_list_field(
 }
 
 fn python_path_to_string(
-    python: pyo3::prelude::Python,
+    python: Python,
     path: &PyAny,
 ) -> PyResult<String> {
-    if let Ok(py_string) = path.downcast::<PyString>() {
+    if path.is_instance::<PyString>()? {
+        let py_string: &PyString = path.extract()?;
         return Ok(py_string.to_str()?.to_string());
     }
-    if let Ok(py_bytes) = path.downcast::<PyBytes>() {
+    if path.is_instance::<PyBytes>()? {
+        let py_bytes: &PyBytes = path.extract()?;
         return Ok(String::from_utf8(py_bytes.as_bytes().to_vec())
             .map_err(|e| PyErr::new::<pyo3::exceptions::PyValueError, _>(format!("{}", e)))?);
     }
     let fspath_result = path.call_method0("__fspath__")?;
-    if let Ok(py_string) = fspath_result.downcast::<PyString>() {
+    if fspath_result.is_instance::<PyString>()? {
+        let py_string: &PyString = fspath_result.extract()?;
         return Ok(py_string.to_str()?.to_string());
     }
-    if let Ok(py_bytes) = fspath_result.downcast::<PyBytes>() {
+    if fspath_result.is_instance::<PyBytes>()? {
+        let py_bytes: &PyBytes = fspath_result.extract()?;
         return Ok(String::from_utf8(py_bytes.as_bytes().to_vec())
             .map_err(|e| PyErr::new::<pyo3::exceptions::PyValueError, _>(format!("{}", e)))?);
     }
