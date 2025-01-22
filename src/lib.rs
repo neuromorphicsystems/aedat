@@ -1,7 +1,7 @@
 mod aedat_core;
 
-use ndarray::IntoDimension;
 use numpy::convert::ToPyArray;
+use numpy::ndarray::IntoDimension;
 use numpy::prelude::*;
 use numpy::Element;
 use pyo3::prelude::*;
@@ -21,21 +21,19 @@ struct Decoder {
 impl Decoder {
     #[new]
     fn new(path: &pyo3::Bound<'_, pyo3::types::PyAny>) -> Result<Self, pyo3::PyErr> {
-        pyo3::Python::with_gil(|python| -> Result<Self, pyo3::PyErr> {
-            match python_path_to_string(python, path) {
-                Ok(result) => match aedat_core::Decoder::new(result) {
-                    Ok(result) => Ok(Decoder { decoder: result }),
-                    Err(error) => Err(pyo3::PyErr::from(error)),
-                },
-                Err(error) => Err(error),
-            }
-        })
+        match python_path_to_string(path) {
+            Ok(result) => match aedat_core::Decoder::new(result) {
+                Ok(result) => Ok(Decoder { decoder: result }),
+                Err(error) => Err(pyo3::PyErr::from(error)),
+            },
+            Err(error) => Err(error),
+        }
     }
 
     fn id_to_stream(&self, python: pyo3::prelude::Python) -> PyResult<PyObject> {
-        let python_id_to_stream = pyo3::types::PyDict::new_bound(python);
+        let python_id_to_stream = pyo3::types::PyDict::new(python);
         for (id, stream) in self.decoder.id_to_stream.iter() {
-            let python_stream = pyo3::types::PyDict::new_bound(python);
+            let python_stream = pyo3::types::PyDict::new(python);
             match stream.content {
                 aedat_core::StreamContent::Events => {
                     python_stream.set_item("type", "events")?;
@@ -70,7 +68,7 @@ impl Decoder {
             None => return Ok(None),
         };
         pyo3::Python::with_gil(|python| -> PyResult<Option<PyObject>> {
-            let python_packet = pyo3::types::PyDict::new_bound(python);
+            let python_packet = pyo3::types::PyDict::new(python);
             python_packet.set_item("stream_id", packet.stream_id)?;
             match shell
                 .decoder
@@ -107,7 +105,7 @@ impl Decoder {
                             0,
                             "t",
                             None,
-                            u64::get_dtype_bound(python).num(),
+                            u64::get_dtype(python).num(),
                         );
                         set_dtype_as_list_field(
                             python,
@@ -115,7 +113,7 @@ impl Decoder {
                             1,
                             "x",
                             None,
-                            u16::get_dtype_bound(python).num(),
+                            u16::get_dtype(python).num(),
                         );
                         set_dtype_as_list_field(
                             python,
@@ -123,7 +121,7 @@ impl Decoder {
                             2,
                             "y",
                             None,
-                            u16::get_dtype_bound(python).num(),
+                            u16::get_dtype(python).num(),
                         );
                         set_dtype_as_list_field(
                             python,
@@ -131,7 +129,7 @@ impl Decoder {
                             3,
                             "on",
                             Some("p"),
-                            bool::get_dtype_bound(python).num(),
+                            bool::get_dtype(python).num(),
                         );
                         let mut dtype: *mut numpy::npyffi::PyArray_Descr = std::ptr::null_mut();
                         if numpy::PY_ARRAY_API.PyArray_DescrConverter(
@@ -184,7 +182,7 @@ impl Decoder {
                             )))
                         }
                     };
-                    let python_frame = pyo3::types::PyDict::new_bound(python);
+                    let python_frame = pyo3::types::PyDict::new(python);
                     python_frame.set_item("t", frame.t())?;
                     python_frame.set_item("begin_t", frame.begin_t())?;
                     python_frame.set_item("end_t", frame.end_t())?;
@@ -214,11 +212,10 @@ impl Decoder {
                             python_frame.set_item(
                                 "pixels",
                                 match frame.pixels() {
-                                    Some(result) => result
-                                        .bytes()
-                                        .to_pyarray_bound(python)
-                                        .reshape(dimensions)?,
-                                    None => numpy::array::PyArray2::<u8>::zeros_bound(
+                                    Some(result) => {
+                                        result.bytes().to_pyarray(python).reshape(dimensions)?
+                                    }
+                                    None => numpy::array::PyArray2::<u8>::zeros(
                                         python, dimensions, false,
                                     ),
                                 },
@@ -244,9 +241,9 @@ impl Decoder {
                                         for index in 0..(pixels.len() / channels) {
                                             pixels.swap(index * channels, index * channels + 2);
                                         }
-                                        pixels.to_pyarray_bound(python).reshape(dimensions)?
+                                        pixels.to_pyarray(python).reshape(dimensions)?
                                     }
-                                    None => numpy::array::PyArray3::<u8>::zeros_bound(
+                                    None => numpy::array::PyArray3::<u8>::zeros(
                                         python, dimensions, false,
                                     ),
                                 },
@@ -287,7 +284,7 @@ impl Decoder {
                             0,
                             "t",
                             None,
-                            u64::get_dtype_bound(python).num(),
+                            u64::get_dtype(python).num(),
                         );
                         set_dtype_as_list_field(
                             python,
@@ -295,7 +292,7 @@ impl Decoder {
                             1,
                             "temperature",
                             None,
-                            f32::get_dtype_bound(python).num(),
+                            f32::get_dtype(python).num(),
                         );
                         set_dtype_as_list_field(
                             python,
@@ -303,7 +300,7 @@ impl Decoder {
                             2,
                             "accelerometer_x",
                             None,
-                            f32::get_dtype_bound(python).num(),
+                            f32::get_dtype(python).num(),
                         );
                         set_dtype_as_list_field(
                             python,
@@ -311,7 +308,7 @@ impl Decoder {
                             3,
                             "accelerometer_y",
                             None,
-                            f32::get_dtype_bound(python).num(),
+                            f32::get_dtype(python).num(),
                         );
                         set_dtype_as_list_field(
                             python,
@@ -319,7 +316,7 @@ impl Decoder {
                             4,
                             "accelerometer_z",
                             None,
-                            f32::get_dtype_bound(python).num(),
+                            f32::get_dtype(python).num(),
                         );
                         set_dtype_as_list_field(
                             python,
@@ -327,7 +324,7 @@ impl Decoder {
                             5,
                             "gyroscope_x",
                             None,
-                            f32::get_dtype_bound(python).num(),
+                            f32::get_dtype(python).num(),
                         );
                         set_dtype_as_list_field(
                             python,
@@ -335,7 +332,7 @@ impl Decoder {
                             6,
                             "gyroscope_y",
                             None,
-                            f32::get_dtype_bound(python).num(),
+                            f32::get_dtype(python).num(),
                         );
                         set_dtype_as_list_field(
                             python,
@@ -343,7 +340,7 @@ impl Decoder {
                             7,
                             "gyroscope_z",
                             None,
-                            f32::get_dtype_bound(python).num(),
+                            f32::get_dtype(python).num(),
                         );
                         set_dtype_as_list_field(
                             python,
@@ -351,7 +348,7 @@ impl Decoder {
                             8,
                             "magnetometer_x",
                             None,
-                            f32::get_dtype_bound(python).num(),
+                            f32::get_dtype(python).num(),
                         );
                         set_dtype_as_list_field(
                             python,
@@ -359,7 +356,7 @@ impl Decoder {
                             9,
                             "magnetometer_y",
                             None,
-                            f32::get_dtype_bound(python).num(),
+                            f32::get_dtype(python).num(),
                         );
                         set_dtype_as_list_field(
                             python,
@@ -367,7 +364,7 @@ impl Decoder {
                             10,
                             "magnetometer_z",
                             None,
-                            f32::get_dtype_bound(python).num(),
+                            f32::get_dtype(python).num(),
                         );
                         let mut dtype: *mut numpy::npyffi::PyArray_Descr = std::ptr::null_mut();
                         if numpy::PY_ARRAY_API.PyArray_DescrConverter(
@@ -451,7 +448,7 @@ impl Decoder {
                             0,
                             "t",
                             None,
-                            u64::get_dtype_bound(python).num(),
+                            u64::get_dtype(python).num(),
                         );
                         set_dtype_as_list_field(
                             python,
@@ -459,7 +456,7 @@ impl Decoder {
                             1,
                             "source",
                             None,
-                            u8::get_dtype_bound(python).num(),
+                            u8::get_dtype(python).num(),
                         );
                         let mut dtype: *mut numpy::npyffi::PyArray_Descr = std::ptr::null_mut();
                         if numpy::PY_ARRAY_API.PyArray_DescrConverter(
@@ -590,24 +587,26 @@ unsafe fn set_dtype_as_list_field(
     }
 }
 
-fn python_path_to_string(
-    python: pyo3::prelude::Python,
-    path: &pyo3::Bound<'_, pyo3::types::PyAny>,
-) -> PyResult<String> {
+fn python_path_to_string(path: &pyo3::Bound<'_, pyo3::types::PyAny>) -> PyResult<String> {
     if let Ok(result) = path.downcast::<pyo3::types::PyString>() {
         return Ok(result.to_string());
     }
     if let Ok(result) = path.downcast::<pyo3::types::PyBytes>() {
         return Ok(result.to_string());
     }
-    let fspath_result = path.to_object(python).call_method0(python, "__fspath__")?;
+    let fspath_result = path.call_method0("__fspath__")?;
     {
-        let fspath_as_string: PyResult<&pyo3::types::PyString> = fspath_result.extract(python);
+        let fspath_as_string: Result<
+            &pyo3::Bound<'_, pyo3::types::PyString>,
+            pyo3::DowncastError<'_, '_>,
+        > = fspath_result.downcast();
         if let Ok(result) = fspath_as_string {
             return Ok(result.to_string());
         }
     }
-    let fspath_as_bytes: &pyo3::types::PyBytes = fspath_result.extract(python)?;
+    let fspath_as_bytes: &pyo3::Bound<'_, pyo3::types::PyBytes> = fspath_result
+        .downcast()
+        .map_err(|__fspath__| pyo3::exceptions::PyTypeError::new_err("path must be a string, bytes, or an object with an __fspath__ method (such as pathlib.Path"))?;
     Ok(fspath_as_bytes.to_string())
 }
 
