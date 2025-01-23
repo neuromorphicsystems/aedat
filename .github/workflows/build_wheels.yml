@@ -8,11 +8,20 @@ on:
       - published
 
 env:
-  CIBW_ARCHS_MACOS: x86_64 arm64
+  CIBW_SKIP: cp36-* cp37-* cp38-* pp* *i686 *win32
+
+  # cibuildhweel macOS configuration
+  CIBW_ARCHS_MACOS: native
+
+  # cibuildhweel linux configuration
   CIBW_ARCHS_LINUX: x86_64
+  CIBW_MANYLINUX_X86_64_IMAGE: manylinux_2_28
+  CIBW_MUSLLINUX_X86_64_IMAGE: musllinux_1_2
   CIBW_BEFORE_ALL_LINUX: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- --default-toolchain=stable --profile=minimal -y
   CIBW_ENVIRONMENT_LINUX: 'PATH="$HOME/.cargo/bin:$PATH"'
-  CIBW_SKIP: cp36-* cp37-* pp* *i686
+
+  # cibuildhweel Windows configuration
+  CIBW_ARCHS_WINDOWS: AMD64
 
 jobs:
   build_wheels:
@@ -20,7 +29,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        # macos-13 is an Intel runner, macos-latest is an ARM runner
+        os: [macos-13, macos-latest, ubuntu-latest, windows-latest]
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
@@ -39,24 +49,37 @@ jobs:
         with:
           name: wheelhouse-${{ matrix.os }}
           path: ./wheelhouse/*.whl
-  import_library:
-    name: Import library on ${{ matrix.os }} with Python ${{ matrix.python }}
+  test_library:
+    name: Test library on ${{ matrix.os }} with Python ${{ matrix.python }} and numpy ${{ matrix.numpy }}
     runs-on: ${{ matrix.os }}
     needs: [build_wheels]
     strategy:
       matrix:
+        numpy: ["==1.26.4", ">=2"]
         python: ["3.9", "3.10", "3.11", "3.12", "3.13"]
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        # macos-13 is an Intel runner, macos-latest is an ARM runner
+        os: [macos-13, macos-latest, ubuntu-latest, windows-latest]
+        exclude:
+          # this configuration yields 'Windows fatal exception: access violation'
+          # this may get fixed in a maintenance upgrade of 1.26.x (x > 4)
+          - numpy: ==1.26.4
+            os: windows-latest
+            python: 3.13
     steps:
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
+      - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
-          name: wheelhouse-${{ matrix.os }}
+          name: ${{ matrix.os }}
           path: wheelhouse
-      - run: python -m pip install --find-links wheelhouse aedat
-      - run: python -c 'import aedat'
+      - run: python -m pip install toml
+      - run: python -m pip install 'numpy${{ matrix.numpy }}'
+      - run: python .github/workflows/install_dependencies.py
+      - run: ls wheelhouse
+      - run: python -m pip install --no-index --find-links wheelhouse aedat
+      - run: python -m pytest tests/
   build_sdist:
     name: Build source distribution
     runs-on: ubuntu-latest
@@ -70,13 +93,13 @@ jobs:
   upload_pypi:
     name: Upload wheels and sidst to PyPI
     runs-on: ubuntu-latest
-    needs: [build_wheels, import_library, build_sdist]
+    needs: [build_wheels, test_library, build_sdist]
     if: github.event_name == 'release' && github.event.action == 'published'
     steps:
       - uses: actions/download-artifact@v4
         with:
           path: wheelhouse
-          pattern: wheelhouse-*
+          pattern: "*"
           merge-multiple: true
       - uses: actions/download-artifact@v4
         with:
