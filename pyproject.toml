@@ -7,9 +7,9 @@ authors = [
     {name = "International Centre for Neuromorphic Systems"},
     {name = "Alexandre Marcireau"},
 ]
-version = "2.2.0"
 requires-python = ">=3.9"
 dependencies = ["numpy>=1.26"]
+version = "2.2.0"
 
 [project.urls]
 homepage = "https://github.com/neuromorphicsystems/aedat/"
@@ -17,5 +17,5 @@ repository = "https://github.com/neuromorphicsystems/aedat/"
 documentation = "https://github.com/neuromorphicsystems/aedat/"
 
 [build-system]
-requires = ["maturin==1.8.1", "numpy>=1.26"]
+requires = ["maturin==1.7.4", "numpy>=1.26"]
 build-backend = "maturin"
