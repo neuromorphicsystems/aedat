@@ -12,13 +12,16 @@ use self::flatbuffers::{EndianScalar, Follow};
 #[deprecated(since = "2.0.0", note = "Use associated constants instead. This will no longer be generated in 2021.")]
 pub const ENUM_MIN_FRAME_FORMAT: i8 = 0;
 #[deprecated(since = "2.0.0", note = "Use associated constants instead. This will no longer be generated in 2021.")]
-pub const ENUM_MAX_FRAME_FORMAT: i8 = 24;
+pub const ENUM_MAX_FRAME_FORMAT: i8 = 26;
 #[deprecated(since = "2.0.0", note = "Use associated constants instead. This will no longer be generated in 2021.")]
 #[allow(non_camel_case_types)]
-pub const ENUM_VALUES_FRAME_FORMAT: [FrameFormat; 3] = [
+pub const ENUM_VALUES_FRAME_FORMAT: [FrameFormat; 6] = [
   FrameFormat::Gray,
+  FrameFormat::Gray16,
   FrameFormat::Bgr,
+  FrameFormat::Bgr16,
   FrameFormat::Bgra,
+  FrameFormat::Bgra16,
 ];
 
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
@@ -27,22 +30,31 @@ pub struct FrameFormat(pub i8);
 #[allow(non_upper_case_globals)]
 impl FrameFormat {
   pub const Gray: Self = Self(0);
+  pub const Gray16: Self = Self(2);
   pub const Bgr: Self = Self(16);
+  pub const Bgr16: Self = Self(18);
   pub const Bgra: Self = Self(24);
+  pub const Bgra16: Self = Self(26);
 
   pub const ENUM_MIN: i8 = 0;
-  pub const ENUM_MAX: i8 = 24;
+  pub const ENUM_MAX: i8 = 26;
   pub const ENUM_VALUES: &'static [Self] = &[
     Self::Gray,
+    Self::Gray16,
     Self::Bgr,
+    Self::Bgr16,
     Self::Bgra,
+    Self::Bgra16,
   ];
   /// Returns the variant's name or "" if unknown.
   pub fn variant_name(self) -> Option<&'static str> {
     match self {
       Self::Gray => Some("Gray"),
+      Self::Gray16 => Some("Gray16"),
       Self::Bgr => Some("Bgr"),
+      Self::Bgr16 => Some("Bgr16"),
       Self::Bgra => Some("Bgra"),
+      Self::Bgra16 => Some("Bgra16"),
       _ => None,
     }
   }

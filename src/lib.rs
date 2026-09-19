@@ -15,6 +15,7 @@ impl std::convert::From<aedat_core::ParseError> for pyo3::PyErr {
 #[pyclass]
 struct Decoder {
     decoder: aedat_core::Decoder,
+    warned_unknown_frame_format: bool,
 }
 
 #[pymethods]
@@ -23,7 +24,10 @@ impl Decoder {
     fn new(path: &pyo3::Bound<'_, pyo3::types::PyAny>) -> Result<Self, pyo3::PyErr> {
         match python_path_to_string(path) {
             Ok(result) => match aedat_core::Decoder::new(result) {
-                Ok(result) => Ok(Decoder { decoder: result }),
+                Ok(result) => Ok(Decoder {
+                    decoder: result,
+                    warned_unknown_frame_format: false,
+                }),
                 Err(error) => Err(pyo3::PyErr::from(error)),
             },
             Err(error) => Err(error),
@@ -60,14 +64,50 @@ impl Decoder {
     }
 
     fn __next__(mut shell: pyo3::PyRefMut<Self>) -> PyResult<Option<PyObject>> {
-        let packet = match shell.decoder.next() {
-            Some(result) => match result {
-                Ok(result) => result,
-                Err(result) => return Err(pyo3::PyErr::from(result)),
-            },
-            None => return Ok(None),
-        };
-        pyo3::Python::with_gil(|python| -> PyResult<Option<PyObject>> {
+        loop {
+            let packet = match shell.decoder.next() {
+                Some(result) => match result {
+                    Ok(result) => result,
+                    Err(result) => return Err(pyo3::PyErr::from(result)),
+                },
+                None => return Ok(None),
+            };
+            let is_frame = matches!(
+                shell
+                    .decoder
+                    .id_to_stream
+                    .get(&packet.stream_id)
+                    .map(|stream| stream.content),
+                Some(aedat_core::StreamContent::Frame)
+            );
+            if is_frame {
+                match aedat_core::frame_generated::size_prefixed_root_as_frame(&packet.buffer) {
+                    Ok(frame) => {
+                        if frame_format_info(frame.format()).is_none() {
+                            if !shell.warned_unknown_frame_format {
+                                let format_code = frame.format().0;
+                                pyo3::Python::with_gil(|python| {
+                                    let message = std::ffi::CString::new(format!(
+                                        "skipping unknown frame format {format_code} (OpenCV type code); continuing with remaining packets"
+                                    ))
+                                    .expect("warning message");
+                                    let category =
+                                        python.get_type::<pyo3::exceptions::PyUserWarning>();
+                                    let _ = pyo3::PyErr::warn(python, category.as_any(), &message, 1);
+                                });
+                                shell.warned_unknown_frame_format = true;
+                            }
+                            continue;
+                        }
+                    }
+                    Err(_) => {
+                        return Err(pyo3::PyErr::from(aedat_core::ParseError::new(
+                            "the packet does not have a size prefix",
+                        )))
+                    }
+                }
+            }
+            return pyo3::Python::with_gil(|python| -> PyResult<Option<PyObject>> {
             let python_packet = pyo3::types::PyDict::new(python);
             python_packet.set_item("stream_id", packet.stream_id)?;
             match shell
@@ -188,32 +228,41 @@ impl Decoder {
                     python_frame.set_item("end_t", frame.end_t())?;
                     python_frame.set_item("exposure_begin_t", frame.exposure_begin_t())?;
                     python_frame.set_item("exposure_end_t", frame.exposure_end_t())?;
-                    python_frame.set_item(
-                        "format",
-                        match frame.format() {
-                            aedat_core::frame_generated::FrameFormat::Gray => "L",
-                            aedat_core::frame_generated::FrameFormat::Bgr => "RGB",
-                            aedat_core::frame_generated::FrameFormat::Bgra => "RGBA",
-                            _ => {
-                                return Err(pyo3::PyErr::from(aedat_core::ParseError::new(
-                                    "unknown frame format",
-                                )))
-                            }
-                        },
-                    )?;
+                    let (format_name, channels, is_u16) = match frame_format_info(frame.format()) {
+                        Some(info) => info,
+                        None => {
+                            return Err(pyo3::PyErr::from(aedat_core::ParseError::new(
+                                "unknown frame format",
+                            )))
+                        }
+                    };
+                    python_frame.set_item("format", format_name)?;
                     python_frame.set_item("width", frame.width())?;
                     python_frame.set_item("height", frame.height())?;
                     python_frame.set_item("offset_x", frame.offset_x())?;
                     python_frame.set_item("offset_y", frame.offset_y())?;
-                    match frame.format() {
-                        aedat_core::frame_generated::FrameFormat::Gray => {
-                            let dimensions =
-                                [frame.height() as usize, frame.width() as usize].into_dimension();
+                    let height = frame.height() as usize;
+                    let width = frame.width() as usize;
+                    if channels == 1 {
+                        let dimensions = [height, width].into_dimension();
+                        if is_u16 {
                             python_frame.set_item(
                                 "pixels",
                                 match frame.pixels() {
-                                    Some(result) => {
-                                        result.bytes().to_pyarray(python).reshape(dimensions)?
+                                    Some(pixels) => le_u16_pixels(pixels.bytes())?
+                                        .to_pyarray(python)
+                                        .reshape(dimensions)?,
+                                    None => numpy::array::PyArray2::<u16>::zeros(
+                                        python, dimensions, false,
+                                    ),
+                                },
+                            )?;
+                        } else {
+                            python_frame.set_item(
+                                "pixels",
+                                match frame.pixels() {
+                                    Some(pixels) => {
+                                        pixels.bytes().to_pyarray(python).reshape(dimensions)?
                                     }
                                     None => numpy::array::PyArray2::<u8>::zeros(
                                         python, dimensions, false,
@@ -221,38 +270,36 @@ impl Decoder {
                                 },
                             )?;
                         }
-                        aedat_core::frame_generated::FrameFormat::Bgr
-                        | aedat_core::frame_generated::FrameFormat::Bgra => {
-                            let channels = if frame.format()
-                                == aedat_core::frame_generated::FrameFormat::Bgr
-                            {
-                                3_usize
-                            } else {
-                                4_usize
-                            };
-                            let dimensions =
-                                [frame.height() as usize, frame.width() as usize, channels]
-                                    .into_dimension();
+                    } else {
+                        let dimensions = [height, width, channels].into_dimension();
+                        if is_u16 {
                             python_frame.set_item(
                                 "pixels",
                                 match frame.pixels() {
-                                    Some(result) => {
-                                        let mut pixels = result.bytes().to_owned();
-                                        for index in 0..(pixels.len() / channels) {
-                                            pixels.swap(index * channels, index * channels + 2);
-                                        }
-                                        pixels.to_pyarray(python).reshape(dimensions)?
+                                    Some(pixels) => {
+                                        let mut values = le_u16_pixels(pixels.bytes())?;
+                                        swap_bgr_channel(&mut values, channels);
+                                        values.to_pyarray(python).reshape(dimensions)?
+                                    }
+                                    None => numpy::array::PyArray3::<u16>::zeros(
+                                        python, dimensions, false,
+                                    ),
+                                },
+                            )?;
+                        } else {
+                            python_frame.set_item(
+                                "pixels",
+                                match frame.pixels() {
+                                    Some(pixels) => {
+                                        let mut values = pixels.bytes().to_owned();
+                                        swap_bgr_channel(&mut values, channels);
+                                        values.to_pyarray(python).reshape(dimensions)?
                                     }
                                     None => numpy::array::PyArray3::<u8>::zeros(
                                         python, dimensions, false,
                                     ),
                                 },
                             )?;
-                        }
-                        _ => {
-                            return Err(pyo3::PyErr::from(aedat_core::ParseError::new(
-                                "unknown frame format",
-                            )))
                         }
                     }
                     python_packet.set_item("frame", python_frame)?;
@@ -523,6 +570,42 @@ impl Decoder {
             }
             Ok(Some(python_packet.into()))
         })
+        }
+    }
+}
+
+fn frame_format_info(
+    format: aedat_core::frame_generated::FrameFormat,
+) -> Option<(&'static str, usize, bool)> {
+    match format {
+        aedat_core::frame_generated::FrameFormat::Gray => Some(("L", 1, false)),
+        aedat_core::frame_generated::FrameFormat::Gray16 => Some(("I;16", 1, true)),
+        aedat_core::frame_generated::FrameFormat::Bgr => Some(("RGB", 3, false)),
+        aedat_core::frame_generated::FrameFormat::Bgr16 => Some(("RGB", 3, true)),
+        aedat_core::frame_generated::FrameFormat::Bgra => Some(("RGBA", 4, false)),
+        aedat_core::frame_generated::FrameFormat::Bgra16 => Some(("RGBA", 4, true)),
+        _ => None,
+    }
+}
+
+fn le_u16_pixels(bytes: &[u8]) -> Result<Vec<u16>, aedat_core::ParseError> {
+    if bytes.len() % 2 != 0 {
+        return Err(aedat_core::ParseError::new(
+            "16-bit frame pixel buffer length is not a multiple of 2",
+        ));
+    }
+    Ok(bytes
+        .chunks_exact(2)
+        .map(|chunk| u16::from_le_bytes([chunk[0], chunk[1]]))
+        .collect())
+}
+
+fn swap_bgr_channel<T>(pixels: &mut [T], channels: usize) {
+    if channels < 3 {
+        return;
+    }
+    for index in 0..(pixels.len() / channels) {
+        pixels.swap(index * channels, index * channels + 2);
     }
 }
 

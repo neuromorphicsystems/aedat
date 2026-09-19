@@ -55,6 +55,8 @@ for packet in decoder:
         index += 1
 ```
 
+`"I;16"` is Pillow's 16-bit gray mode (Davis APS / `OPENCV_16U_C1`).
+
 ### OpenCV
 
 ```py
@@ -72,6 +74,8 @@ for packet in decoder:
         cv2.imwrite(f"{index}.png", image)
         index += 1
 ```
+
+16-bit gray (`"I;16"`) can be written as-is. DAVIS recordings from jAER store APS as `OPENCV_16U_C1`.
 
 ## Detailed example
 
@@ -134,9 +138,15 @@ for packet in decoder:
                 "height": <int>,
                 "offset_x": <int>,
                 "offset_y": <int>,
-                "pixels": <numpy.array(shape=(height, width), dtype=uint8)>,
+                "pixels": <numpy.ndarray>,
             }
-        format is one of "L", "RGB", "RGBA"
+        format is one of "L", "I;16", "RGB", "RGBA":
+            "L"     OPENCV_8U_C1,  pixels shape (H, W), dtype uint8
+            "I;16"  OPENCV_16U_C1, pixels shape (H, W), dtype uint16  (Davis APS)
+            "RGB"   OPENCV_8U_C3 or OPENCV_16U_C3, shape (H, W, 3), dtype uint8 or uint16
+            "RGBA"  OPENCV_8U_C4 or OPENCV_16U_C4, shape (H, W, 4), dtype uint8 or uint16
+        File pixels are OpenCV BGR(A); the decoder swaps to RGB(A) to match Pillow.
+        Unknown OpenCV type codes are skipped (a UserWarning is issued once) so events and IMU stay readable.
         """
         print("{} x {} frame".format(packet["frame"]["width"], packet["frame"]["height"]))
     elif "imus" in packet:
@@ -208,10 +218,17 @@ source .venv/bin/activate
 maturin develop  # or maturin develop --release to build with optimizations
 ```
 
-After changing any of the files in _framebuffers_, one must run:
+After changing any of the files in _flatbuffers_, one must run:
 
 ```sh
 flatc --rust -o src/ flatbuffers/*.fbs
+```
+
+Tiny 16-bit frame fixtures can be regenerated with:
+
+```sh
+pip install flatbuffers
+python scripts/write_frame_fixtures.py
 ```
 
 To format the code, run:

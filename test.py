@@ -1,7 +1,9 @@
 import hashlib
 import pathlib
+import warnings
 
 import aedat
+import numpy
 
 dirname = pathlib.Path(__file__).resolve().parent
 
@@ -43,3 +45,32 @@ print(f"{on_hasher.hexdigest()=}")
 print(f"{frame_hasher.hexdigest()=}")
 print(f"{imus_hasher.hexdigest()=}")
 print(f"{triggers_hasher.hexdigest()=}")
+
+decoder = aedat.Decoder(dirname / "test_data_gray16.aedat4")
+assert decoder.id_to_stream()[0]["type"] == "frame"
+assert decoder.id_to_stream()[0]["width"] == 2
+assert decoder.id_to_stream()[0]["height"] == 2
+packets = list(decoder)
+assert len(packets) == 1
+frame = packets[0]["frame"]
+assert frame["format"] == "I;16"
+assert frame["width"] == 2
+assert frame["height"] == 2
+pixels = frame["pixels"]
+assert pixels.shape == (2, 2)
+assert pixels.dtype == numpy.uint16
+assert pixels[0, 0] == 1
+assert pixels[0, 1] == 2
+assert pixels[1, 0] == 3
+assert pixels[1, 1] == 1023
+print("gray16 ok")
+
+decoder = aedat.Decoder(dirname / "test_data_unknown_then_gray16.aedat4")
+with warnings.catch_warnings(record=True) as caught:
+    warnings.simplefilter("always")
+    packets = list(decoder)
+assert len(packets) == 1
+assert packets[0]["frame"]["format"] == "I;16"
+assert packets[0]["frame"]["pixels"][1, 1] == 1023
+assert any("unknown frame format 1" in str(warning.message) for warning in caught)
+print("skip unknown frame format ok")
