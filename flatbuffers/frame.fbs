@@ -1,9 +1,14 @@
 file_identifier "FRME";
 
+// Values are OpenCV matrix type codes (CV_8UC1=0, CV_16UC1=2, …).
+// Gray / Bgr / Bgra keep the names used by aedat 2.x; Gray16 is Davis APS.
 enum FrameFormat : int8 {
-	Gray = 0,
-	Bgr = 16,
-	Bgra = 24,
+	Gray = 0,    // OPENCV_8U_C1
+	Gray16 = 2,  // OPENCV_16U_C1 (Davis APS: 10-bit ADC in little-endian uint16)
+	Bgr = 16,    // OPENCV_8U_C3
+	Bgr16 = 18,  // OPENCV_16U_C3
+	Bgra = 24,   // OPENCV_8U_C4
+	Bgra16 = 26, // OPENCV_16U_C4
 }
 
 table Frame {

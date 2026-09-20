@@ -116,6 +116,7 @@ impl std::convert::From<std::num::ParseIntError> for ParseError {
     }
 }
 
+#[derive(Clone, Copy)]
 pub enum StreamContent {
     Events,
     Frame,
