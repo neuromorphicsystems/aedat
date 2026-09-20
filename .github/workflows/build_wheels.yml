@@ -35,7 +35,6 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        # macos-15-intel is an Intel runner, macos-latest is an ARM runner
         os: [ubuntu-latest, ubuntu-24.04-arm, macos-latest, macos-15-intel, windows-latest, windows-11-arm]
     steps:
       - uses: actions/checkout@v4
@@ -58,7 +57,6 @@ jobs:
       matrix:
         numpy: ["==1.26.4", ">=2"]
         python: ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14", "3.14t"]
-        # macos-15-intel is an Intel runner, macos-latest is an ARM runner
         os: [ubuntu-latest, ubuntu-24.04-arm, macos-latest, macos-15-intel, windows-latest, windows-11-arm]
         exclude:
           # this configuration yields 'Windows fatal exception: access violation'
@@ -83,7 +81,7 @@ jobs:
       - uses: astral-sh/setup-uv@v10.1.0
         with:
           version: 0.12.17
-          python-version: ${{ matrix.python }}
+          python-version: ${{ matrix.os == 'windows-11-arm' && format('cpython-{0}-windows-aarch64-none', matrix.python) || matrix.python }}
           activate-environment: true
       - uses: actions/download-artifact@v4
         with:
