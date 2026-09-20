@@ -621,14 +621,16 @@ fn frame_format_info(
 }
 
 fn le_u16_pixels(bytes: &[u8]) -> Result<Vec<u16>, aedat_core::ParseError> {
-    if bytes.len() % 2 != 0 {
+    if !bytes.len().is_multiple_of(2) {
         return Err(aedat_core::ParseError::new(
             "16-bit frame pixel buffer length is not a multiple of 2",
         ));
     }
     Ok(bytes
-        .chunks_exact(2)
-        .map(|chunk| u16::from_le_bytes([chunk[0], chunk[1]]))
+        .as_chunks::<2>()
+        .0
+        .iter()
+        .map(|chunk| u16::from_le_bytes(*chunk))
         .collect())
 }
 

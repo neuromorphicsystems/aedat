@@ -6,7 +6,8 @@ use std::io::Read;
     clippy::derivable_impls,
     clippy::derive_partial_eq_without_eq,
     clippy::extra_unused_lifetimes,
-    clippy::size_of_in_element_count
+    clippy::size_of_in_element_count,
+    clippy::unnecessary_cast
 )]
 #[path = "./ioheader_generated.rs"]
 pub(crate) mod ioheader_generated;
@@ -17,7 +18,8 @@ pub(crate) mod ioheader_generated;
     clippy::derivable_impls,
     clippy::derive_partial_eq_without_eq,
     clippy::extra_unused_lifetimes,
-    clippy::size_of_in_element_count
+    clippy::size_of_in_element_count,
+    clippy::unnecessary_cast
 )]
 #[path = "./events_generated.rs"]
 pub(crate) mod events_generated;
@@ -28,7 +30,8 @@ pub(crate) mod events_generated;
     clippy::derivable_impls,
     clippy::derive_partial_eq_without_eq,
     clippy::extra_unused_lifetimes,
-    clippy::size_of_in_element_count
+    clippy::size_of_in_element_count,
+    clippy::unnecessary_cast
 )]
 #[path = "./frame_generated.rs"]
 pub(crate) mod frame_generated;
@@ -39,7 +42,8 @@ pub(crate) mod frame_generated;
     clippy::derivable_impls,
     clippy::derive_partial_eq_without_eq,
     clippy::extra_unused_lifetimes,
-    clippy::size_of_in_element_count
+    clippy::size_of_in_element_count,
+    clippy::unnecessary_cast
 )]
 #[path = "./imus_generated.rs"]
 pub(crate) mod imus_generated;
@@ -50,7 +54,8 @@ pub(crate) mod imus_generated;
     clippy::derivable_impls,
     clippy::derive_partial_eq_without_eq,
     clippy::extra_unused_lifetimes,
-    clippy::size_of_in_element_count
+    clippy::size_of_in_element_count,
+    clippy::unnecessary_cast
 )]
 #[path = "./triggers_generated.rs"]
 pub(crate) mod triggers_generated;
