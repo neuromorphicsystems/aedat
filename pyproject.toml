@@ -21,7 +21,8 @@ requires = ["maturin==1.15.0", "numpy>=1.26"]
 build-backend = "maturin"
 
 [dependency-groups]
-dev = ["pytest==8.4.2", "ruff==0.16.8", "ty==0.0.82"]
+test = ["pytest==8.4.2"]
+dev = [{include-group = "test"}, "ruff==0.16.8", "ty==0.0.82"]
 
 [tool.ruff]
 extend-exclude = ["*.md"]
