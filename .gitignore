@@ -4,3 +4,5 @@ aedat.so
 aedat.pyd
 wheelhouse/
 .venv
+__pycache__/
+.pytest_cache/

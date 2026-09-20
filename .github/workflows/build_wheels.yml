@@ -7,21 +7,27 @@ on:
     types:
       - published
 
+concurrency:
+    group: "build"
+    cancel-in-progress: true
+
 env:
-  CIBW_SKIP: cp36-* cp37-* cp38-* pp* *i686 *win32
+  CIBW_SKIP: cp315-* cp315t-* pp* *i686 *win32 cp39-win_arm64 cp310-win_arm64
 
   # cibuildhweel macOS configuration
   CIBW_ARCHS_MACOS: native
 
   # cibuildhweel linux configuration
-  CIBW_ARCHS_LINUX: x86_64
+  CIBW_ARCHS_LINUX: native
   CIBW_MANYLINUX_X86_64_IMAGE: manylinux_2_28
   CIBW_MUSLLINUX_X86_64_IMAGE: musllinux_1_2
+  # On Linux, wheels are built inside a container on the GitHub runner (unlike macOS and Windows which use the GitHub runner directly)
+  # Any build dependencies must thus be installed on the container (using CIBW_BEFORE_ALL_LINUX), *not* on the runner with the regular workflow
   CIBW_BEFORE_ALL_LINUX: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- --default-toolchain=stable --profile=minimal -y
   CIBW_ENVIRONMENT_LINUX: 'PATH="$HOME/.cargo/bin:$PATH"'
 
   # cibuildhweel Windows configuration
-  CIBW_ARCHS_WINDOWS: AMD64
+  CIBW_ARCHS_WINDOWS: native
 
 jobs:
   build_wheels:
@@ -29,15 +35,17 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        # macos-13 is an Intel runner, macos-latest is an ARM runner
-        os: [macos-13, macos-latest, ubuntu-latest, windows-latest]
+        # macos-15-intel is an Intel runner, macos-latest is an ARM runner
+        os: [ubuntu-latest, ubuntu-24.04-arm, macos-latest, macos-15-intel, windows-latest, windows-11-arm]
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
-      - run: python -m pip install cibuildwheel==2.21.3
+      - uses: astral-sh/setup-uv@v10.1.0
+        with:
+          version: 0.12.17
       - run: echo "MACOSX_DEPLOYMENT_TARGET=$(sw_vers -productVersion | cut -d '.' -f 1-2)" >> $GITHUB_ENV
         if: startsWith(matrix.os, 'macos')
-      - run: python -m cibuildwheel
+      - run: uvx cibuildwheel==4.2.1
       - uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.os }}
@@ -49,36 +57,54 @@ jobs:
     strategy:
       matrix:
         numpy: ["==1.26.4", ">=2"]
-        python: ["3.9", "3.10", "3.11", "3.12", "3.13"]
-        # macos-13 is an Intel runner, macos-latest is an ARM runner
-        os: [macos-13, macos-latest, ubuntu-latest, windows-latest]
+        python: ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14", "3.14t"]
+        # macos-15-intel is an Intel runner, macos-latest is an ARM runner
+        os: [ubuntu-latest, ubuntu-24.04-arm, macos-latest, macos-15-intel, windows-latest, windows-11-arm]
         exclude:
           # this configuration yields 'Windows fatal exception: access violation'
           # this may get fixed in a maintenance upgrade of 1.26.x (x > 4)
           - numpy: ==1.26.4
             os: windows-latest
-            python: 3.13
+            python: "3.13"
+          # numpy 1.26.4 has no wheels for Python 3.14 and does not build from source on it
+          - numpy: ==1.26.4
+            python: "3.14"
+          - numpy: ==1.26.4
+            python: "3.14t"
+          # numpy has no Windows ARM64 wheels before 2.3.0 and none at all for Python 3.9 and 3.10
+          - numpy: ==1.26.4
+            os: windows-11-arm
+          - os: windows-11-arm
+            python: "3.9"
+          - os: windows-11-arm
+            python: "3.10"
     steps:
-      - uses: actions/setup-python@v5
+      - uses: astral-sh/setup-uv@v10.1.0
         with:
+          version: 0.12.17
           python-version: ${{ matrix.python }}
+          activate-environment: true
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
           name: ${{ matrix.os }}
           path: wheelhouse
-      - run: python -m pip install toml
-      - run: python -m pip install 'numpy${{ matrix.numpy }}'
-      - run: python .github/workflows/install_dependencies.py
-      - run: ls wheelhouse
-      - run: python -m pip install --no-index --find-links wheelhouse aedat
-      - run: python test.py
+      - run: python --version
+      - run: uv pip install 'numpy${{ matrix.numpy }}'
+      - run: uv pip install --no-index --find-links wheelhouse aedat
+      - run: uv pip install pytest==8.4.2
+      - run: python -m pytest tests/
+      - run: python -c 'import sys, aedat; assert not sys._is_gil_enabled(), "importing aedat re-enabled the GIL"'
+        if: endsWith(matrix.python, 't')
   build_sdist:
     name: Build source distribution
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: pipx run build --sdist
+      - uses: astral-sh/setup-uv@v10.1.0
+        with:
+          version: 0.12.17
+      - run: uvx --from build==1.6.1 pyproject-build --sdist
       - uses: actions/upload-artifact@v4
         with:
           name: dist
@@ -99,6 +125,6 @@ jobs:
           name: dist
           path: dist
       - run: mv wheelhouse/* dist/
-      - uses: pypa/gh-action-pypi-publish@v1.8.14
+      - uses: pypa/gh-action-pypi-publish@v1.12.4
         with:
           password: ${{ secrets.PYPI_API_TOKEN }}

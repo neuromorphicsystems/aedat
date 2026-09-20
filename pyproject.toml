@@ -9,7 +9,7 @@ authors = [
 ]
 requires-python = ">=3.9"
 dependencies = ["numpy>=1.26"]
-version = "2.2.0"
+version = "2.3.0"
 
 [project.urls]
 homepage = "https://github.com/neuromorphicsystems/aedat/"
@@ -17,5 +17,15 @@ repository = "https://github.com/neuromorphicsystems/aedat/"
 documentation = "https://github.com/neuromorphicsystems/aedat/"
 
 [build-system]
-requires = ["maturin==1.7.4", "numpy>=1.26"]
+requires = ["maturin==1.15.0", "numpy>=1.26"]
 build-backend = "maturin"
+
+[dependency-groups]
+dev = ["pytest==8.4.2", "ruff==0.16.8", "ty==0.0.82"]
+
+[tool.ruff]
+extend-exclude = ["*.md"]
+
+[tool.ruff.lint]
+extend-select = ["I"]
+

@@ -55,7 +55,7 @@ for packet in decoder:
         index += 1
 ```
 
-`"I;16"` is Pillow's 16-bit gray mode (Davis APS / `OPENCV_16U_C1`).
+The four `format` values are Pillow mode strings, so they can be passed to `PIL.Image.fromarray` directly.
 
 ### OpenCV
 
@@ -75,7 +75,7 @@ for packet in decoder:
         index += 1
 ```
 
-16-bit gray (`"I;16"`) can be written as-is. DAVIS recordings from jAER store APS as `OPENCV_16U_C1`.
+Only the color formats need a channel swap. `cv2.imwrite` writes `"L"` and `"I;16"` arrays as-is.
 
 ## Detailed example
 
@@ -120,7 +120,7 @@ for packet in decoder:
                 ("t", "<u8"),
                 ("x", "<u2"),
                 ("y", "<u2"),
-                ("on", "?"),
+                (("p", "on"), "?"),
             ]
         """
         print("{} polarity events".format(len(packet["events"])))
@@ -142,10 +142,11 @@ for packet in decoder:
             }
         format is one of "L", "I;16", "RGB", "RGBA":
             "L"     OPENCV_8U_C1,  pixels shape (H, W), dtype uint8
-            "I;16"  OPENCV_16U_C1, pixels shape (H, W), dtype uint16  (Davis APS)
+            "I;16"  OPENCV_16U_C1, pixels shape (H, W), dtype uint16
             "RGB"   OPENCV_8U_C3 or OPENCV_16U_C3, shape (H, W, 3), dtype uint8 or uint16
             "RGBA"  OPENCV_8U_C4 or OPENCV_16U_C4, shape (H, W, 4), dtype uint8 or uint16
-        File pixels are OpenCV BGR(A); the decoder swaps to RGB(A) to match Pillow.
+        File pixels are OpenCV BGR(A). The decoder swaps to RGB(A) to match Pillow.
+        DAVIS recordings from jAER store APS frames as OPENCV_16U_C1 ("I;16").
         Unknown OpenCV type codes are skipped (a UserWarning is issued once) so events and IMU stay readable.
         """
         print("{} x {} frame".format(packet["frame"]["width"], packet["frame"]["height"]))
@@ -224,17 +225,20 @@ After changing any of the files in _flatbuffers_, one must run:
 flatc --rust -o src/ flatbuffers/*.fbs
 ```
 
-Tiny 16-bit frame fixtures can be regenerated with:
+To run the tests, run:
 
 ```sh
-pip install flatbuffers
-python scripts/write_frame_fixtures.py
+pip install --group dev
+python -m pytest tests/
 ```
 
-To format the code, run:
+To format and check the code, run:
 
 ```sh
 cargo fmt
+ruff format
+ruff check
+ty check
 ```
 
 # Publish

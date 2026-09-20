@@ -316,9 +316,12 @@ impl Iterator for Decoder {
             buffer: Vec::new(),
             stream_id: {
                 let mut bytes = [0; 4];
-                match self.file.read_exact(&mut bytes) {
-                    Ok(()) => (),
-                    Err(_) => return None,
+                if let Err(error) = self.file.read_exact(&mut bytes) {
+                    return if self.file_data_position == -1 {
+                        None
+                    } else {
+                        Some(Err(ParseError::from(error)))
+                    };
                 }
                 u32::from_le_bytes(bytes)
             },
