@@ -107,10 +107,41 @@ jobs:
         with:
           name: dist
           path: dist/*.tar.gz
+  test_sdist:
+    name: Test source distribution on ${{ matrix.os }} with Python ${{ matrix.python }}
+    runs-on: ${{ matrix.os }}
+    needs: [build_sdist]
+    strategy:
+      matrix:
+        python: ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14", "3.14t"]
+        os: [ubuntu-latest, ubuntu-24.04-arm, macos-latest, macos-15-intel, windows-latest, windows-11-arm]
+        exclude:
+          # numpy has no Windows ARM64 wheels for Python 3.9 and 3.10
+          - os: windows-11-arm
+            python: "3.9"
+          - os: windows-11-arm
+            python: "3.10"
+    steps:
+      # this job deliberately does not check out the repository
+      # building from the downloaded artifact proves that the source distribution is self-contained
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: astral-sh/setup-uv@v10.1.0
+        with:
+          version: 0.12.17
+          python-version: ${{ matrix.os == 'windows-11-arm' && format('cpython-{0}-windows-aarch64-none', matrix.python) || matrix.python }}
+          activate-environment: true
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist
+      - run: python --version
+      - run: uv pip install dist/*.tar.gz
+        shell: bash
+      - run: python -c 'import aedat'
   upload_pypi:
     name: Upload wheels and sidst to PyPI
     runs-on: ubuntu-latest
-    needs: [build_wheels, test_library, build_sdist]
+    needs: [build_wheels, test_library, build_sdist, test_sdist]
     if: github.event_name == 'release' && github.event.action == 'published'
     steps:
       - uses: actions/download-artifact@v4
